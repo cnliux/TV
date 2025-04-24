@@ -3,24 +3,4 @@
 # bbc.co.uk
 # 完整URL
 #http://example.com/live.m3u8
-http://14.212.185.146:9901
-http://116.9.204.242:9901
-http://182.91.124.60:9901
-http://60.214.104.110:352
-http://123.138.22.30:9901
-http://124.93.18.237:9002
-http://110.7.131.193:9901
-http://110.7.131.40:9901
-http://110.7.131.4:9901
-http://221.2.148.205:8154
-http://110.7.131.79:9901
-http://110.7.131.231:9901
-http://110.7.131.146:9901
-http://61.156.228.12:8154
-http://3501776.xyz:35455
-http://home.kuaidi521.com:35455
-http://xiaoya.crccxw.top:35455
-http://zjzcf.synology.me:35455
-http://huashetou.fun:35455
-http://yc.myds.me:35455
-http://xiaoya.crccxw.top:35455
+http://171.118.162.212:9003

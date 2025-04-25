@@ -1,6 +1,8 @@
 https://ghproxy.cc/https://raw.githubusercontent.com/mlvjfchen/TV/refs/heads/main/output/result.txt
 https://fastly.jsdelivr.net/gh/Wirili/IPTV@main/live.txt
 https://aktv.space/live.m3u
+https://www.254950134.xyz/final_streams.txt
+https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u
 http://3501776.xyz:35455/tv.m3u
 http://home.kuaidi521.com:35455/tv.m3u
 http://xiaoya.crccxw.top:35455/tv.m3u

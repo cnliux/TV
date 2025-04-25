@@ -1,4 +1,4 @@
-# 文件 10: main.py
+#!/usr/bin/env python3
 import os
 import asyncio
 import configparser

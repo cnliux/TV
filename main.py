@@ -69,15 +69,11 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
 
     # 正则表达式匹配 IPv4 和 IPv6 地址
     ipv4_pattern = re.compile(r'http://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
-    ipv6_pattern = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[a-fA-F0-9:]+(?::\d+)?)')
+    ipv6_pattern = re.compile(r'http://\[[a-fA-F0-9:]+]')
 
     # 统计每个分类的频道数量
     category_counts = {}
     for channel in sorted_channels:
-        # 如果频道状态不是在线，则跳过
-        if channel.status != 'online':
-            continue
-
         if ipv4_pattern.search(channel.url):
             ipv4_channels.append(channel)
             category_counts[channel.category] = category_counts.get(channel.category, 0) + 1

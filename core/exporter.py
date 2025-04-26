@@ -5,6 +5,7 @@ from datetime import datetime
 import csv
 from urllib.parse import quote
 from .models import Channel
+import re  # 导入正则表达式模块
 
 class ResultExporter:
     def __init__(self, output_dir: str, enable_history: bool, template_path: str, config, matcher):
@@ -19,6 +20,22 @@ class ResultExporter:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def export(self, channels: List[Channel], progress_cb: Callable):
+        prefer_ip = self.config.get('MAIN', 'prefer_ip_version', fallback='both')
+        
+        # 增强的IP地址识别
+        ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
+        ipv6_pattern = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[a-fA-F0-9:]+)(?::\d+)?')
+        
+        filtered_channels = []
+        for chan in channels:
+            is_ipv4 = bool(ipv4_pattern.search(chan.url))
+            is_ipv6 = bool(ipv6_pattern.search(chan.url))
+            
+            if (prefer_ip == 'ipv4' and is_ipv4) or \
+               (prefer_ip == 'ipv6' and is_ipv6) or \
+               (prefer_ip == 'both' and (is_ipv4 or is_ipv6)):
+                filtered_channels.append(chan)
+        
         # 读取白名单
         whitelist_path = Path(self.config.get('WHITELIST', 'whitelist_path', fallback='config/whitelist.txt'))
         if whitelist_path.exists():
@@ -27,7 +44,7 @@ class ResultExporter:
         else:
             whitelist = set()
 
-        sorted_channels = self.matcher.sort_channels_by_template(channels, whitelist)
+        sorted_channels = self.matcher.sort_channels_by_template(filtered_channels, whitelist)
         
         # 严格从配置文件读取参数
         m3u_filename = self.config.get('EXPORTER', 'm3u_filename')

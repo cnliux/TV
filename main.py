@@ -55,49 +55,39 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     分类名称,#genre#
     频道名称,URL
     """
-    # 从配置文件中读取 update_interval_classify
-    update_interval = config.getint('PROGRESS', 'update_interval_classify', fallback=10000)
-
-    # 创建进度条
-    progress = StageProgress("🏷️ 分类频道", len(channels), update_interval=update_interval)
-
-    # 首先对频道按照模板顺序进行排序
-    sorted_channels = matcher.sort_channels_by_template(channels, whitelist)
-
+    prefer_ip = config.get('MAIN', 'prefer_ip_version', fallback='both')
+    
+    # 增强的IP地址识别
+    ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
+    ipv6_pattern = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[a-fA-F0-9:]+)(?::\d+)?')
+    
     ipv4_channels = []
     ipv6_channels = []
-
-    # 正则表达式匹配 IPv4 和 IPv6 地址
-    ipv4_pattern = re.compile(r'http://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
-    ipv6_pattern = re.compile(r'http://\[[a-fA-F0-9:]+]')
-
-    # 统计每个分类的频道数量
-    category_counts = {}
-    for channel in sorted_channels:
-        if ipv4_pattern.search(channel.url):
+    
+    for channel in channels:
+        is_ipv4 = bool(ipv4_pattern.search(channel.url))
+        is_ipv6 = bool(ipv6_pattern.search(channel.url))
+        
+        if prefer_ip == 'ipv4' and is_ipv4:
             ipv4_channels.append(channel)
-            category_counts[channel.category] = category_counts.get(channel.category, 0) + 1
-        elif ipv6_pattern.search(channel.url):
+        elif prefer_ip == 'ipv6' and is_ipv6:
             ipv6_channels.append(channel)
-            category_counts[channel.category] = category_counts.get(channel.category, 0) + 1
-
-        # 更新进度条
-        progress.update()
-
-    progress.complete()
-
+        elif prefer_ip == 'both':
+            if is_ipv4:
+                ipv4_channels.append(channel)
+            if is_ipv6:
+                ipv6_channels.append(channel)
+    
     # 写入 IPv4 地址
     ipv4_output_path = Path(config.get('PATHS', 'ipv4_output_path', fallback='ipv4.txt'))
     with open(output_dir / ipv4_output_path, 'w', encoding='utf-8') as f:
         current_category = None
         for channel in ipv4_channels:
-            # 如果分类发生变化，写入分类行
             if channel.category != current_category:
                 if current_category is not None:
-                    f.write("\n")  # 在分类之间添加空行
+                    f.write("\n")
                 f.write(f"{channel.category},#genre#\n")
                 current_category = channel.category
-            # 写入频道信息
             f.write(f"{channel.name},{channel.url}\n")
     logger.info(f"📝 IPv4 地址已写入: {output_dir / ipv4_output_path}")
 
@@ -106,13 +96,11 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     with open(output_dir / ipv6_output_path, 'w', encoding='utf-8') as f:
         current_category = None
         for channel in ipv6_channels:
-            # 如果分类发生变化，写入分类行
             if channel.category != current_category:
                 if current_category is not None:
-                    f.write("\n")  # 在分类之间添加空行
+                    f.write("\n")
                 f.write(f"{channel.category},#genre#\n")
                 current_category = channel.category
-            # 写入频道信息
             f.write(f"{channel.name},{channel.url}\n")
     logger.info(f"📝 IPv6 地址已写入: {output_dir / ipv6_output_path}")
 
@@ -139,6 +127,13 @@ async def main():
         if not config_path.exists():
             raise FileNotFoundError(f"❌ 配置文件不存在: {config_path}")
         config.read(config_path, encoding='utf-8')
+
+        # 验证 prefer_ip_version 配置
+        valid_ip_versions = ['ipv4', 'ipv6', 'both']
+        prefer_ip = config.get('MAIN', 'prefer_ip_version', fallback='both')
+        if prefer_ip.lower() not in valid_ip_versions:
+            logger.error(f"无效的prefer_ip_version配置: {prefer_ip}，必须是ipv4/ipv6/both")
+            return
 
         # 获取 output_dir
         output_dir = Path(config.get('MAIN', 'output_dir', fallback='outputs'))
@@ -224,7 +219,7 @@ async def main():
         logger.info(f"过滤黑名单后频道数量: {len(filtered_channels)}")
 
         # 按模板排序并优先白名单频道
-        sorted_channels = matcher.sort_channels_by_template(filtered_channels, whitelist)  # 修正：添加 whitelist 参数
+        sorted_channels = matcher.sort_channels_by_template(filtered_channels, whitelist)
 
         # 阶段4: 测速测试
         unique_channels = []
@@ -258,7 +253,7 @@ async def main():
             enable_history=enable_history,
             template_path=str(templates_path),
             config=config,
-            matcher=matcher  # 添加 matcher 参数
+            matcher=matcher
         )
         progress = StageProgress("💾 导出结果", 2, update_interval=1)
         exporter.export(unique_channels, progress.update)

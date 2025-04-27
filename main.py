@@ -59,7 +59,7 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     
     # 增强的IP地址识别
     ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
-    ipv6_pattern = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[a-fA-F0-9:]+)(?::\d+)?')
+    ipv6_pattern = re.compile(r'https?://\[[a-fA-F0-9:]+\](?::\d+)?')  # 仅匹配带[]的IPv6地址
     
     ipv4_channels = []
     ipv6_channels = []
@@ -105,17 +105,20 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     logger.info(f"📝 IPv6 地址已写入: {output_dir / ipv6_output_path}")
 
 
-def write_failed_urls(failed_urls: Set[str], config):
+def write_failed_urls(failed_urls: Set[str], config, output_dir):
     """将测速失败的 URL 写入文件"""
     failed_urls_path = Path(config.get('PATHS', 'failed_urls_path', fallback='failed_urls.txt'))
+    # 确保输出目录存在
+    output_dir.mkdir(parents=True, exist_ok=True)
+    failed_urls_file = output_dir / failed_urls_path
     if not failed_urls:
         logger.info("没有测速失败的 URL，无需写入文件")
         return
 
-    with open(failed_urls_path, 'w', encoding='utf-8') as f:
+    with open(failed_urls_file, 'w', encoding='utf-8') as f:
         for url in failed_urls:
             f.write(f"{url}\n")
-    logger.info(f"📝 测速失败的 URL 已写入: {failed_urls_path}")
+    logger.info(f"📝 测速失败的 URL 已写入: {failed_urls_file}")
 
 
 async def main():
@@ -245,7 +248,7 @@ async def main():
 
         # 写入失败的 URL
         if failed_urls:
-            write_failed_urls(failed_urls, config)
+            write_failed_urls(failed_urls, config, output_dir)
 
         # 阶段5: 结果导出
         exporter = ResultExporter(

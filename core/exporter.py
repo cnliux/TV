@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 import csv
 from urllib.parse import quote
-from .models import Channel
+from core.models import Channel
 import re  # 导入正则表达式模块
 
 class ResultExporter:
@@ -24,7 +24,7 @@ class ResultExporter:
         
         # 增强的IP地址识别
         ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
-        ipv6_pattern = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[a-fA-F0-9:]+)(?::\d+)?')
+        ipv6_pattern = re.compile(r'https?://\[[a-fA-F0-9:]+\](?::\d+)?')  # 仅匹配带[]的IPv6地址
         
         filtered_channels = []
         for chan in channels:

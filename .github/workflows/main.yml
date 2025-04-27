@@ -2,7 +2,7 @@ name: 每日更新
 
 on:
   schedule:
-    - cron: '0 22 * * *'
+    - cron: '0 19 * * *'
   # 手动触发
   workflow_dispatch:
 

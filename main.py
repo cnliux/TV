@@ -58,8 +58,8 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     prefer_ip = config.get('MAIN', 'prefer_ip_version', fallback='both')
     
     # 增强的IP地址识别
-    ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
-    ipv6_pattern = re.compile(r'https?://\[[a-fA-F0-9:]+\](?::\d+)?')  # 仅匹配带[]的IPv6地址
+    ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
+    ipv6_pattern = re.compile(r'https?://\[[a-fA-F0-9:]+\](?::\d+)?')
     
     ipv4_channels = []
     ipv6_channels = []

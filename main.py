@@ -51,43 +51,51 @@ def is_blacklisted(channel, blacklist):
 def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, matcher, whitelist):
     """
     分类 IPv4 和 IPv6 地址，并将结果写入文件。
-    文件格式：
-    分类名称,#genre#
-    频道名称,URL
+    同时将 IPv6 地址的内容追加到 all.m3u 和 all.txt 文件中。
     """
-    prefer_ip = config.get('MAIN', 'prefer_ip_version', fallback='both')
-    
-    # 增强的IP地址识别
-    ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
-    ipv6_pattern = re.compile(r'https?://\[[a-fA-F0-9:]+\](?::\d+)?')
-    
+    # 从配置文件中读取 update_interval_classify
+    update_interval = config.getint('PROGRESS', 'update_interval_classify', fallback=10000)
+
+    # 创建进度条
+    progress = StageProgress("🏷️ 分类频道", len(channels), update_interval=update_interval)
+
+    # 首先对频道按照模板顺序进行排序
+    sorted_channels = matcher.sort_channels_by_template(channels, whitelist)
+
     ipv4_channels = []
     ipv6_channels = []
-    
-    for channel in channels:
-        is_ipv4 = bool(ipv4_pattern.search(channel.url))
-        is_ipv6 = bool(ipv6_pattern.search(channel.url))
-        
-        if prefer_ip == 'ipv4' and is_ipv4:
+
+    # 正则表达式匹配 IPv4 和 IPv6 地址
+    ipv4_pattern = re.compile(r'http://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
+    ipv6_pattern = re.compile(r'http://\[[a-fA-F0-9:]+]')
+
+    # 统计每个分类的频道数量
+    category_counts = {}
+    for channel in sorted_channels:
+        if ipv4_pattern.search(channel.url):
             ipv4_channels.append(channel)
-        elif prefer_ip == 'ipv6' and is_ipv6:
+            category_counts[channel.category] = category_counts.get(channel.category, 0) + 1
+        elif ipv6_pattern.search(channel.url):
             ipv6_channels.append(channel)
-        elif prefer_ip == 'both':
-            if is_ipv4:
-                ipv4_channels.append(channel)
-            if is_ipv6:
-                ipv6_channels.append(channel)
-    
+            category_counts[channel.category] = category_counts.get(channel.category, 0) + 1
+
+        # 更新进度条
+        progress.update()
+
+    progress.complete()
+
     # 写入 IPv4 地址
     ipv4_output_path = Path(config.get('PATHS', 'ipv4_output_path', fallback='ipv4.txt'))
     with open(output_dir / ipv4_output_path, 'w', encoding='utf-8') as f:
         current_category = None
         for channel in ipv4_channels:
+            # 如果分类发生变化，写入分类行
             if channel.category != current_category:
                 if current_category is not None:
-                    f.write("\n")
+                    f.write("\n")  # 在分类之间添加空行
                 f.write(f"{channel.category},#genre#\n")
                 current_category = channel.category
+            # 写入频道信息
             f.write(f"{channel.name},{channel.url}\n")
     logger.info(f"📝 IPv4 地址已写入: {output_dir / ipv4_output_path}")
 
@@ -96,29 +104,48 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     with open(output_dir / ipv6_output_path, 'w', encoding='utf-8') as f:
         current_category = None
         for channel in ipv6_channels:
+            # 如果分类发生变化，写入分类行
             if channel.category != current_category:
                 if current_category is not None:
-                    f.write("\n")
+                    f.write("\n")  # 在分类之间添加空行
                 f.write(f"{channel.category},#genre#\n")
                 current_category = channel.category
+            # 写入频道信息
             f.write(f"{channel.name},{channel.url}\n")
     logger.info(f"📝 IPv6 地址已写入: {output_dir / ipv6_output_path}")
 
+    # 将 IPv6 地址的内容追加到 all.m3u 和 all.txt 文件中
+    m3u_filename = config.get('EXPORTER', 'm3u_filename', fallback='all.m3u')
+    txt_filename = config.get('EXPORTER', 'txt_filename', fallback='all.txt')
 
-def write_failed_urls(failed_urls: Set[str], config, output_dir):
+    # 追加到 all.m3u 文件
+    with open(output_dir / m3u_filename, 'a', encoding='utf-8') as f:
+        f.write("\n# IPv6 Channels\n")
+        for channel in ipv6_channels:
+            f.write(f"#EXTINF:-1 tvg-name=\"{channel.name}\" group-title=\"{channel.category}\",{channel.name}\n")
+            f.write(f"{channel.url}\n")
+    logger.info(f"📝 IPv6 地址已追加到: {output_dir / m3u_filename}")
+
+    # 追加到 all.txt 文件
+    with open(output_dir / txt_filename, 'a', encoding='utf-8') as f:
+        f.write("\n# IPv6 Channels\n")
+        for channel in ipv6_channels:
+            f.write(f"{channel.category},#genre#\n")
+            f.write(f"{channel.name},{channel.url}\n")
+    logger.info(f"📝 IPv6 地址已追加到: {output_dir / txt_filename}")
+
+
+def write_failed_urls(failed_urls: Set[str], config):
     """将测速失败的 URL 写入文件"""
     failed_urls_path = Path(config.get('PATHS', 'failed_urls_path', fallback='failed_urls.txt'))
-    # 确保输出目录存在
-    output_dir.mkdir(parents=True, exist_ok=True)
-    failed_urls_file = output_dir / failed_urls_path
     if not failed_urls:
         logger.info("没有测速失败的 URL，无需写入文件")
         return
 
-    with open(failed_urls_file, 'w', encoding='utf-8') as f:
+    with open(failed_urls_path, 'w', encoding='utf-8') as f:
         for url in failed_urls:
             f.write(f"{url}\n")
-    logger.info(f"📝 测速失败的 URL 已写入: {failed_urls_file}")
+    logger.info(f"📝 测速失败的 URL 已写入: {failed_urls_path}")
 
 
 async def main():
@@ -130,13 +157,6 @@ async def main():
         if not config_path.exists():
             raise FileNotFoundError(f"❌ 配置文件不存在: {config_path}")
         config.read(config_path, encoding='utf-8')
-
-        # 验证 prefer_ip_version 配置
-        valid_ip_versions = ['ipv4', 'ipv6', 'both']
-        prefer_ip = config.get('MAIN', 'prefer_ip_version', fallback='both')
-        if prefer_ip.lower() not in valid_ip_versions:
-            logger.error(f"无效的prefer_ip_version配置: {prefer_ip}，必须是ipv4/ipv6/both")
-            return
 
         # 获取 output_dir
         output_dir = Path(config.get('MAIN', 'output_dir', fallback='outputs'))
@@ -248,7 +268,7 @@ async def main():
 
         # 写入失败的 URL
         if failed_urls:
-            write_failed_urls(failed_urls, config, output_dir)
+            write_failed_urls(failed_urls, config)
 
         # 阶段5: 结果导出
         exporter = ResultExporter(
@@ -273,27 +293,4 @@ async def main():
 
         logger.info(f"📄 生成的 M3U 文件: {(output_dir / m3u_filename).resolve()}")
         logger.info(f"📄 生成的 TXT 文件: {(output_dir / txt_filename).resolve()}")
-        logger.info(f"📄 生成的 IPv4 地址文件: {(output_dir / ipv4_output_path).resolve()}")
-        logger.info(f"📄 生成的 IPv6 地址文件: {(output_dir / ipv6_output_path).resolve()}")
-
-        # 输出摘要
-        online = sum(1 for c in unique_channels if c.status == 'online')
-        logger.info(f"✅ 任务完成！在线频道: {online}/{len(unique_channels)}")
-        logger.info(f"📂 输出目录: {output_dir.resolve()}")
-
-    except Exception as e:
-        logger.error(f"❌ 发生错误: {str(e)}")
-        logger.info("💡 排查建议:")
-        logger.info("1. 检查 config 目录下的文件是否存在")
-        logger.info("2. 确认订阅源URL可访问")
-        logger.info("3. 验证分类模板格式是否正确")
-
-if __name__ == "__main__":
-    if os.name == 'nt':
-        from asyncio import WindowsSelectorEventLoopPolicy
-        asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
-    
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        logger.error(f"❌ 全局异常捕获: {str(e)}")
+        logger

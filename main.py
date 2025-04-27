@@ -293,4 +293,27 @@ async def main():
 
         logger.info(f"📄 生成的 M3U 文件: {(output_dir / m3u_filename).resolve()}")
         logger.info(f"📄 生成的 TXT 文件: {(output_dir / txt_filename).resolve()}")
-        logger
+        logger.info(f"📄 生成的 IPv4 地址文件: {(output_dir / ipv4_output_path).resolve()}")
+        logger.info(f"📄 生成的 IPv6 地址文件: {(output_dir / ipv6_output_path).resolve()}")
+
+        # 输出摘要
+        online = sum(1 for c in unique_channels if c.status == 'online')
+        logger.info(f"✅ 任务完成！在线频道: {online}/{len(unique_channels)}")
+        logger.info(f"📂 输出目录: {output_dir.resolve()}")
+
+    except Exception as e:
+        logger.error(f"❌ 发生错误: {str(e)}")
+        logger.info("💡 排查建议:")
+        logger.info("1. 检查 config 目录下的文件是否存在")
+        logger.info("2. 确认订阅源URL可访问")
+        logger.info("3. 验证分类模板格式是否正确")
+
+if __name__ == "__main__":
+    if os.name == 'nt':
+        from asyncio import WindowsSelectorEventLoopPolicy
+        asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
+    
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        logger.error(f"❌ 全局异常捕获: {str(e)}")

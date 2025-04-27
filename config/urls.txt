@@ -1,1 +1,1 @@
-https://cnliux.github.io/tv.txt
+https://raw.githubusercontent.com/cnliux/TV/refs/heads/main/outputs/ipv6.txt

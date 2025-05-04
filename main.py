@@ -72,17 +72,26 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     # 统计每个分类的频道数量
     category_counts = {}
     for channel in sorted_channels:
-        if ipv4_pattern.search(channel.url):
-            ipv4_channels.append(channel)
-            category_counts[channel.category] = category_counts.get(channel.category, 0) + 1
-        elif ipv6_pattern.search(channel.url):
+        if ipv6_pattern.search(channel.url):
             ipv6_channels.append(channel)
+            category_counts[channel.category] = category_counts.get(channel.category, 0) + 1
+        elif ipv4_pattern.search(channel.url):
+            ipv4_channels.append(channel)
             category_counts[channel.category] = category_counts.get(channel.category, 0) + 1
 
         # 更新进度条
         progress.update()
 
     progress.complete()
+
+    # 根据 prefer_ip_version 的值调整频道顺序
+    prefer_ip_version = config.get('MAIN', 'prefer_ip_version', fallback='both')
+    if prefer_ip_version == 'ipv6':
+        preferred_channels = ipv6_channels + ipv4_channels
+    elif prefer_ip_version == 'ipv4':
+        preferred_channels = ipv4_channels + ipv6_channels
+    else:
+        preferred_channels = ipv4_channels + ipv6_channels  # 默认顺序
 
     # 写入 IPv4 地址
     ipv4_output_path = Path(config.get('PATHS', 'ipv4_output_path', fallback='ipv4.txt'))

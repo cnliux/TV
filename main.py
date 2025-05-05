@@ -3,7 +3,7 @@ import os
 import asyncio
 import configparser
 from pathlib import Path
-from typing import List, Set
+from typing import List, Set, Callable
 import re
 import logging
 from core import (
@@ -76,7 +76,7 @@ async def fetch_sources(
     urls: List[str], 
     timeout: float, 
     concurrency: int, 
-    progress_cb: Callable
+    progress_cb: Callable[[], None]
 ) -> List[str]:
     """获取所有订阅源内容"""
     fetcher = SourceFetcher(timeout=timeout, concurrency=concurrency)
@@ -85,7 +85,7 @@ async def fetch_sources(
 def parse_channels(
     contents: List[str], 
     config: configparser.ConfigParser, 
-    progress_cb: Callable
+    progress_cb: Callable[[], None]
 ) -> List[Channel]:
     """解析频道列表"""
     parser = PlaylistParser(config)
@@ -100,7 +100,7 @@ def parse_channels(
 def categorize_channels(
     channels: List[Channel], 
     templates_path: str, 
-    progress_cb: Callable
+    progress_cb: Callable[[], None]
 ) -> List[Channel]:
     """对频道进行分类"""
     matcher = AutoCategoryMatcher(templates_path)
@@ -134,7 +134,7 @@ async def test_channels(
     concurrency: int, 
     max_attempts: int, 
     min_speed: float, 
-    progress_cb: Callable
+    progress_cb: Callable[[], None]
 ) -> Set[str]:
     """测速测试"""
     tester = SpeedTester(

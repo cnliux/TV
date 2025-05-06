@@ -276,7 +276,8 @@ async def main():
             enable_history=enable_history,
             template_path=str(templates_path),
             config=config,
-            matcher=matcher
+            matcher=matcher,
+            tester=tester
         )
         progress = StageProgress("💾 导出结果", 2, update_interval=1)
         exporter.export(unique_channels, progress.update)

@@ -137,21 +137,21 @@ class ResultExporter:
         self.logger.info(f"CSV历史记录已生成: {filename}")
 
     def _export_ip_files(self, channels: List[Channel]):
-        """单独导出IPv4/IPv6文件"""
-        ipv4_path = Path(self.config.get('PATHS', 'ipv4_output_path'))
-        ipv6_path = Path(self.config.get('PATHS', 'ipv6_output_path'))
-        
-        with open(self.output_dir / ipv4_path, 'w', encoding='utf-8') as f4, \
-             open(self.output_dir / ipv6_path, 'w', encoding='utf-8') as f6:
-            
-            current_cat4, current_cat6 = None, None
-            seen4, seen6 = set(), set()
-            
+        """导出IPv4和IPv6独立文件"""
+        ipv4_path = self.output_dir / self.config.get('PATHS', 'ipv4_output_path')
+        ipv6_path = self.output_dir / self.config.get('PATHS', 'ipv6_output_path')
+
+        # 初始化分类状态和去重集合
+        current_cat4, current_cat6 = None, None
+        seen4, seen6 = set(), set()
+
+        # 写入IPv4文件
+        with open(ipv4_path, 'w', encoding='utf-8') as f4:
             for channel in channels:
-                if channel.status != 'online':
+                if channel.status != 'online' or channel.url in seen4:
                     continue
-                
-                if self.ipv4_pattern.search(channel.url) and channel.url not in seen4:
+                if self.ipv4_pattern.search(channel.url):
+                    # 分类行处理
                     if channel.category != current_cat4:
                         if current_cat4 is not None:
                             f4.write("\n")
@@ -159,8 +159,14 @@ class ResultExporter:
                         current_cat4 = channel.category
                     f4.write(f"{channel.name},{channel.url}\n")
                     seen4.add(channel.url)
-                
-                elif self.ipv6_pattern.search(channel.url) and channel.url not in seen6:
+
+        # 写入IPv6文件
+        with open(ipv6_path, 'w', encoding='utf-8') as f6:
+            for channel in channels:
+                if channel.status != 'online' or channel.url in seen6:
+                    continue
+                if self.ipv6_pattern.search(channel.url):
+                    # 分类行处理
                     if channel.category != current_cat6:
                         if current_cat6 is not None:
                             f6.write("\n")
@@ -168,7 +174,7 @@ class ResultExporter:
                         current_cat6 = channel.category
                     f6.write(f"{channel.name},{channel.url}\n")
                     seen6.add(channel.url)
-        
+
         self.logger.info(f"IPv4文件已生成: {ipv4_path}")
         self.logger.info(f"IPv6文件已生成: {ipv6_path}")
 

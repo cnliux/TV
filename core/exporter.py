@@ -29,6 +29,12 @@ class ResultExporter:
 
         sorted_channels = self.matcher.sort_channels_by_template(channels, whitelist)
         
+        # 按分类排序（确保同一分类的频道连续）
+        sorted_channels = sorted(
+            sorted_channels,
+            key=lambda x: x.category
+        )
+
         # 严格从配置文件读取参数
         m3u_filename = self.config.get('EXPORTER', 'm3u_filename')
         epg_url = self.config.get('EXPORTER', 'm3u_epg_url')
@@ -51,14 +57,21 @@ class ResultExporter:
 
     def _export_m3u(self, channels: List[Channel], filename: str, epg_url: str, logo_url_template: str):
         with open(self.output_dir / filename, 'w', encoding='utf-8') as f:
-            # 构建文件头（保持不变）
+            # 构建文件头
             header = f'#EXTM3U x-tvg-url="{epg_url}" catchup="append" catchup-source="?playseek=${{(b)yyyyMMddHHmmss}}-${{(e)yyyyMMddHHmmss}}"'
             f.write(header + "\n")
             
             seen_urls = set()
+            current_category = None  # 跟踪当前分类
+            
             for channel in channels:
                 if channel.status != 'online' or channel.url in seen_urls:
                     continue
+                
+                # 如果分类发生变化，写入新的分类行
+                if channel.category != current_category:
+                    f.write(f"{channel.category},#genre#\n")
+                    current_category = channel.category  # 更新当前分类
                 
                 # 处理台标 URL
                 logo_part = ''
@@ -66,7 +79,7 @@ class ResultExporter:
                     logo_url = logo_url_template.replace('{name}', quote(channel.name))
                     logo_part = f' tvg-logo="{logo_url}"'
                 
-                # 写入频道信息（修改 EXTINF 部分）
+                # 写入频道信息
                 f.write(
                     f'#EXTINF:-1 tvg-name="{channel.name}"{logo_part} '
                     f'group-title="{channel.category}", {channel.name}\n'

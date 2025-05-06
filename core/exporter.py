@@ -3,9 +3,10 @@ from typing import List, Callable, Set, Dict
 from pathlib import Path
 from datetime import datetime
 import csv
-from urllib.parse import quote
 import re
 import logging
+from urllib.parse import quote
+
 from .models import Channel
 
 class ResultExporter:
@@ -16,7 +17,9 @@ class ResultExporter:
         self.config = config
         self.matcher = matcher
         self._ensure_dirs()
-        self.ipv4_pattern = re.compile(r'http://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
+        
+        # 修正正则表达式，支持端口号
+        self.ipv4_pattern = re.compile(r'http://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?', re.IGNORECASE)
         self.ipv6_pattern = re.compile(r'http://\[[a-fA-F0-9:]+\](:\d+)?', re.IGNORECASE)
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)

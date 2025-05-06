@@ -17,7 +17,7 @@ class ResultExporter:
         self.matcher = matcher
         self._ensure_dirs()
         self.ipv4_pattern = re.compile(r'http://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
-        self.ipv6_pattern = re.compile(r'http://\[[a-fA-F0-9:]+]')
+        self.ipv6_pattern = re.compile(r'http://\[[a-fA-F0-9:]+\](:\d+)?', re.IGNORECASE)
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 

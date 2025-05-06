@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
 import aiohttp
-import socket
 from typing import List, Callable, Set
 from .models import Channel
 import logging
@@ -34,9 +33,7 @@ class SpeedTester:
         :param progress_cb: 进度回调函数，用于通知测速进度。
         :param failed_urls: 用于记录测速失败的 URL。
         """
-        # 强制使用IPv6
-        connector = aiohttp.TCPConnector(family=socket.AF_INET6)
-        async with aiohttp.ClientSession(connector=connector) as session:
+        async with aiohttp.ClientSession() as session:
             tasks = [self._test(session, c, progress_cb, failed_urls) for c in channels]
             await asyncio.gather(*tasks)
 

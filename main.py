@@ -3,8 +3,7 @@ import os
 import asyncio
 import configparser
 from pathlib import Path
-from typing import List, Set
-import re
+from typing import List, Set, Callable
 import logging
 from core import (
     SourceFetcher,
@@ -182,20 +181,9 @@ async def main():
             config=config,
             matcher=matcher
         )
-        progress = StageProgress("💾 导出结果", 2, update_interval=1)
+        progress = StageProgress("💾 导出结果", 1, update_interval=1)
         exporter.export(unique_channels, progress.update)
         progress.complete()
-
-        # 输出生成的文件路径
-        m3u_filename = config.get('EXPORTER', 'm3u_filename', fallback='all.m3u')
-        txt_filename = config.get('EXPORTER', 'txt_filename', fallback='all.txt')
-        ipv4_output_path = config.get('PATHS', 'ipv4_output_path', fallback='ipv4.txt')
-        ipv6_output_path = config.get('PATHS', 'ipv6_output_path', fallback='ipv6.txt')
-
-        logger.info(f"📄 生成的 M3U 文件: {(output_dir / m3u_filename).resolve()}")
-        logger.info(f"📄 生成的 TXT 文件: {(output_dir / txt_filename).resolve()}")
-        logger.info(f"📄 生成的 IPv4 地址文件: {(output_dir / ipv4_output_path).resolve()}")
-        logger.info(f"📄 生成的 IPv6 地址文件: {(output_dir / ipv6_output_path).resolve()}")
 
         # 输出摘要
         online = sum(1 for c in unique_channels if c.status == 'online')

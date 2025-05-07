@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import asyncio
 import configparser
@@ -53,23 +52,17 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     分类 IPv4 和 IPv6 地址，并将结果写入文件。
     同时将 IPv6 地址的内容追加到 all.m3u 和 all.txt 文件中。
     """
-    # 从配置文件中读取 update_interval_classify
     update_interval = config.getint('PROGRESS', 'update_interval_classify', fallback=10000)
-
-    # 创建进度条
     progress = StageProgress("🏷️ 分类频道", len(channels), update_interval=update_interval)
 
-    # 首先对频道按照模板顺序进行排序
     sorted_channels = matcher.sort_channels_by_template(channels, whitelist)
 
     ipv4_channels = []
     ipv6_channels = []
 
-    # 正则表达式匹配 IPv4 和 IPv6 地址
     ipv4_pattern = re.compile(r'http://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
     ipv6_pattern = re.compile(r'http://\[[a-fA-F0-9:]+]')
 
-    # 统计每个分类的频道数量
     category_counts = {}
     for channel in sorted_channels:
         if ipv4_pattern.search(channel.url):
@@ -79,7 +72,6 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
             ipv6_channels.append(channel)
             category_counts[channel.category] = category_counts.get(channel.category, 0) + 1
 
-        # 更新进度条
         progress.update()
 
     progress.complete()
@@ -89,13 +81,11 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     with open(output_dir / ipv4_output_path, 'w', encoding='utf-8') as f:
         current_category = None
         for channel in ipv4_channels:
-            # 如果分类发生变化，写入分类行
             if channel.category != current_category:
                 if current_category is not None:
                     f.write("\n")  # 在分类之间添加空行
                 f.write(f"{channel.category},#genre#\n")
                 current_category = channel.category
-            # 写入频道信息
             f.write(f"{channel.name},{channel.url}\n")
     logger.info(f"📝 IPv4 地址已写入: {output_dir / ipv4_output_path}")
 
@@ -104,13 +94,11 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     with open(output_dir / ipv6_output_path, 'w', encoding='utf-8') as f:
         current_category = None
         for channel in ipv6_channels:
-            # 如果分类发生变化，写入分类行
             if channel.category != current_category:
                 if current_category is not None:
                     f.write("\n")  # 在分类之间添加空行
                 f.write(f"{channel.category},#genre#\n")
                 current_category = channel.category
-            # 写入频道信息
             f.write(f"{channel.name},{channel.url}\n")
     logger.info(f"📝 IPv6 地址已写入: {output_dir / ipv6_output_path}")
 
@@ -121,7 +109,11 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     # 追加到 all.m3u 文件
     with open(output_dir / m3u_filename, 'a', encoding='utf-8') as f:
         f.write("\n# IPv6 Channels\n")
+        current_category = None
         for channel in ipv6_channels:
+            if channel.category != current_category:
+                f.write(f"{channel.category},#genre#\n")
+                current_category = channel.category
             f.write(f"#EXTINF:-1 tvg-name=\"{channel.name}\" group-title=\"{channel.category}\",{channel.name}\n")
             f.write(f"{channel.url}\n")
     logger.info(f"📝 IPv6 地址已追加到: {output_dir / m3u_filename}")
@@ -129,8 +121,11 @@ def classify_and_write_ips(channels: List['Channel'], config, output_dir: Path, 
     # 追加到 all.txt 文件
     with open(output_dir / txt_filename, 'a', encoding='utf-8') as f:
         f.write("\n# IPv6 Channels\n")
+        current_category = None
         for channel in ipv6_channels:
-            f.write(f"{channel.category},#genre#\n")
+            if channel.category != current_category:
+                f.write(f"{channel.category},#genre#\n")
+                current_category = channel.category
             f.write(f"{channel.name},{channel.url}\n")
     logger.info(f"📝 IPv6 地址已追加到: {output_dir / txt_filename}")
 
@@ -149,34 +144,27 @@ def write_failed_urls(failed_urls: Set[str], config):
 
 
 async def main():
-    """主工作流程"""
     try:
-        # 初始化配置
         config = configparser.ConfigParser()
         config_path = Path('config/config.ini')
         if not config_path.exists():
             raise FileNotFoundError(f"❌ 配置文件不存在: {config_path}")
         config.read(config_path, encoding='utf-8')
 
-        # 获取 output_dir
         output_dir = Path(config.get('MAIN', 'output_dir', fallback='outputs'))
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # 读取 FETCHER 配置
         fetcher_timeout = float(config.get('FETCHER', 'timeout', fallback=15))
         fetcher_concurrency = int(config.get('FETCHER', 'concurrency', fallback=5))
 
-        # 读取 TESTER 配置
         tester_timeout = float(config.get('TESTER', 'timeout', fallback=5))
         tester_concurrency = int(config.get('TESTER', 'concurrency', fallback=4))
         tester_max_attempts = int(config.get('TESTER', 'max_attempts', fallback=3))
         tester_min_download_speed = float(config.get('TESTER', 'min_download_speed', fallback=0.01))
         tester_enable_logging = config.getboolean('TESTER', 'enable_logging', fallback=False)
 
-        # 读取 EXPORTER 配置
         enable_history = config.getboolean('EXPORTER', 'enable_history', fallback=False)
 
-        # 读取 BLACKLIST 配置
         blacklist_path = Path(config.get('BLACKLIST', 'blacklist_path', fallback='config/blacklist.txt'))
         if blacklist_path.exists():
             with open(blacklist_path, 'r', encoding='utf-8') as f:
@@ -184,7 +172,6 @@ async def main():
         else:
             blacklist = set()
 
-        # 读取 WHITELIST 配置
         whitelist_path = Path(config.get('WHITELIST', 'whitelist_path', fallback='config/whitelist.txt'))
         if whitelist_path.exists():
             with open(whitelist_path, 'r', encoding='utf-8') as f:
@@ -192,17 +179,14 @@ async def main():
         else:
             whitelist = set()
 
-        # 读取 PATHS 配置
         urls_path = Path(config.get('PATHS', 'urls_path', fallback='config/urls.txt'))
         templates_path = Path(config.get('PATHS', 'templates_path', fallback='config/templates.txt'))
 
-        # 检查文件是否存在
         if not urls_path.exists():
             raise FileNotFoundError(f"❌ 缺少订阅源文件: {urls_path}")
         if not templates_path.exists():
             raise FileNotFoundError(f"❌ 缺少分类模板文件: {templates_path}")
 
-        # 阶段1: 获取订阅源
         with open(urls_path, 'r', encoding='utf-8') as f:
             urls = [line.strip() for line in f if line.strip()]
         
@@ -214,7 +198,6 @@ async def main():
         contents = await fetcher.fetch_all(urls, progress.update)
         progress.complete()
 
-        # 阶段2: 解析频道
         parser = PlaylistParser(config)
         valid_contents = [c for c in contents if c.strip()]
         progress = StageProgress("🔍 解析频道", len(valid_contents), update_interval=20)
@@ -224,7 +207,6 @@ async def main():
             progress.update()
         progress.complete()
 
-        # 阶段3: 智能分类
         matcher = AutoCategoryMatcher(str(templates_path))
         progress = StageProgress("🏷️ 分类频道", len(channels), update_interval=50)
         for chan in channels:
@@ -233,18 +215,14 @@ async def main():
             progress.update()
         progress.complete()
 
-        # 过滤频道：仅保留模板中定义的频道
         filtered_channels = [chan for chan in channels if matcher.is_in_template(chan.name)]
         logger.info(f"过滤后频道数量: {len(filtered_channels)}/{len(channels)}")
 
-        # 过滤黑名单
         filtered_channels = [chan for chan in filtered_channels if not is_blacklisted(chan, blacklist)]
         logger.info(f"过滤黑名单后频道数量: {len(filtered_channels)}")
 
-        # 按模板排序并优先白名单频道
         sorted_channels = matcher.sort_channels_by_template(filtered_channels, whitelist)
 
-        # 阶段4: 测速测试
         unique_channels = []
         seen_urls = set()
         for chan in sorted_channels:
@@ -266,27 +244,22 @@ async def main():
         progress.complete()
         logger.info("测速测试完成")
 
-        # 写入失败的 URL
         if failed_urls:
             write_failed_urls(failed_urls, config)
 
-        # 阶段5: 结果导出
         exporter = ResultExporter(
             output_dir=str(output_dir),
             enable_history=enable_history,
             template_path=str(templates_path),
             config=config,
-            matcher=matcher,
-            tester=tester
+            matcher=matcher
         )
-        progress = StageProgress("💾 导出结果", 2, update_interval=1)
+        progress = StageProgress("💾 导出结果", 1, update_interval=1)
         exporter.export(unique_channels, progress.update)
         progress.complete()
 
-        # 分类并写入 IPv4 和 IPv6 地址
         classify_and_write_ips(unique_channels, config, output_dir, matcher, whitelist)
 
-        # 输出生成的文件路径
         m3u_filename = config.get('EXPORTER', 'm3u_filename', fallback='all.m3u')
         txt_filename = config.get('EXPORTER', 'txt_filename', fallback='all.txt')
         ipv4_output_path = config.get('PATHS', 'ipv4_output_path', fallback='ipv4.txt')
@@ -297,7 +270,6 @@ async def main():
         logger.info(f"📄 生成的 IPv4 地址文件: {(output_dir / ipv4_output_path).resolve()}")
         logger.info(f"📄 生成的 IPv6 地址文件: {(output_dir / ipv6_output_path).resolve()}")
 
-        # 输出摘要
         online = sum(1 for c in unique_channels if c.status == 'online')
         logger.info(f"✅ 任务完成！在线频道: {online}/{len(unique_channels)}")
         logger.info(f"📂 输出目录: {output_dir.resolve()}")

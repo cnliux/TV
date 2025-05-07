@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from typing import List, Callable
 from pathlib import Path
 from datetime import datetime
@@ -11,59 +12,71 @@ class ResultExporter:
         self.enable_history = enable_history
         self.template_path = template_path
         self.config = config
-        self.matcher = matcher  # matcher 参数传递到这里
+        self.matcher = matcher
         self._ensure_dirs()
 
     def _ensure_dirs(self):
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def export(self, channels: List[Channel], progress_cb: Callable):
+    def get_whitelist(self):
+        """获取白名单"""
         whitelist_path = Path(self.config.get('WHITELIST', 'whitelist_path', fallback='config/whitelist.txt'))
-        whitelist = set()
         if whitelist_path.exists():
             with open(whitelist_path, 'r', encoding='utf-8') as f:
-                whitelist = {line.strip() for line in f if line.strip() and not line.startswith('#')}
+                whitelist = set(line.strip() for line in f if line.strip() and not line.startswith('#'))
+        else:
+            whitelist = set()
+        return whitelist
+
+    def export(self, channels: List[Channel], progress_cb: Callable):
+        # 读取白名单
+        whitelist_path = Path(self.config.get('WHITELIST', 'whitelist_path', fallback='config/whitelist.txt'))
+        if whitelist_path.exists():
+            with open(whitelist_path, 'r', encoding='utf-8') as f:
+                whitelist = set(line.strip() for line in f if line.strip() and not line.startswith('#'))
+        else:
+            whitelist = set()
 
         sorted_channels = self.matcher.sort_channels_by_template(channels, whitelist)
-        sorted_channels = sorted(sorted_channels, key=lambda x: x.category)
-
+        
+        # 严格从配置文件读取参数
         m3u_filename = self.config.get('EXPORTER', 'm3u_filename')
         epg_url = self.config.get('EXPORTER', 'm3u_epg_url')
         logo_url_template = self.config.get('EXPORTER', 'm3u_logo_url')
-
+        
+        # 从PROGRESS节读取进度条间隔设置
+        progress_interval = self.config.getint('PROGRESS', 'update_interval_export', fallback=1)
+        
         self._export_m3u(sorted_channels, m3u_filename, epg_url, logo_url_template)
-        progress_cb(1)
-
+        progress_cb(progress_interval)
+        
         txt_filename = self.config.get('EXPORTER', 'txt_filename')
         self._export_txt(sorted_channels, txt_filename)
-        progress_cb(1)
-
+        progress_cb(progress_interval)
+        
         if self.enable_history:
             csv_format = self.config.get('EXPORTER', 'csv_filename_format')
             self._export_csv(sorted_channels, csv_format)
-            progress_cb(1)
+            progress_cb(progress_interval)
 
     def _export_m3u(self, channels: List[Channel], filename: str, epg_url: str, logo_url_template: str):
         with open(self.output_dir / filename, 'w', encoding='utf-8') as f:
+            # 构建文件头（保持不变）
             header = f'#EXTM3U x-tvg-url="{epg_url}" catchup="append" catchup-source="?playseek=${{(b)yyyyMMddHHmmss}}-${{(e)yyyyMMddHHmmss}}"'
             f.write(header + "\n")
             
             seen_urls = set()
-            current_category = None
-            
             for channel in channels:
                 if channel.status != 'online' or channel.url in seen_urls:
                     continue
                 
-                if channel.category != current_category:
-                    f.write(f"{channel.category},#genre#\n")
-                    current_category = channel.category
-                
+                # 处理台标 URL
                 logo_part = ''
                 if logo_url_template and '{name}' in logo_url_template:
                     logo_url = logo_url_template.replace('{name}', quote(channel.name))
                     logo_part = f' tvg-logo="{logo_url}"'
                 
+                # 写入频道信息（修改 EXTINF 部分）
                 f.write(
                     f'#EXTINF:-1 tvg-name="{channel.name}"{logo_part} '
                     f'group-title="{channel.category}", {channel.name}\n'

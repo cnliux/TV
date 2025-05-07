@@ -182,7 +182,7 @@ class AutoCategoryMatcher:
 
         return sorted_channels
 
-    def _is_whitelisted(self, channel, whitelist):
+    def _is_whitelisted(self, channel: Channel, whitelist: Set[str]) -> bool:
         """检查频道是否在白名单中"""
         for entry in whitelist:
             if entry in channel.url or channel.url == entry or channel.name == entry:

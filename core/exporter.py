@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from typing import List, Callable
 from pathlib import Path
 from datetime import datetime
@@ -7,39 +6,27 @@ from urllib.parse import quote
 from .models import Channel
 
 class ResultExporter:
-    def __init__(self, output_dir: str, enable_history: bool, template_path: str, config, matcher, tester):
+    def __init__(self, output_dir: str, enable_history: bool, template_path: str, config, matcher):
         self.output_dir = Path(output_dir)
         self.enable_history = enable_history
         self.template_path = template_path
         self.config = config
-        self.matcher = matcher
-        self.tester = tester  # 新增：保存测速模块实例
+        self.matcher = matcher  # matcher 参数传递到这里
         self._ensure_dirs()
 
     def _ensure_dirs(self):
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def export(self, channels: List[Channel], progress_cb: Callable):
-        # 读取白名单
         whitelist_path = Path(self.config.get('WHITELIST', 'whitelist_path', fallback='config/whitelist.txt'))
         whitelist = set()
         if whitelist_path.exists():
             with open(whitelist_path, 'r', encoding='utf-8') as f:
                 whitelist = {line.strip() for line in f if line.strip() and not line.startswith('#')}
 
-        # 传递白名单到测速模块
-        self.tester.test_channels(
-            channels, 
-            progress_cb, 
-            set(),  # 这里假设 failed_urls 由其他逻辑处理
-            whitelist=whitelist  # 新增：传递白名单
-        )
-
-        # 按模板排序并去重
         sorted_channels = self.matcher.sort_channels_by_template(channels, whitelist)
         sorted_channels = sorted(sorted_channels, key=lambda x: x.category)
 
-        # 导出文件
         m3u_filename = self.config.get('EXPORTER', 'm3u_filename')
         epg_url = self.config.get('EXPORTER', 'm3u_epg_url')
         logo_url_template = self.config.get('EXPORTER', 'm3u_logo_url')

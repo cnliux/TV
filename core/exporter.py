@@ -37,55 +37,31 @@ class ResultExporter:
         # 按模板排序并优先白名单频道
         sorted_channels = self.matcher.sort_channels_by_template(channels, whitelist)
 
-        # 导出所有频道到 all.m3u 和 all.txt 文件
-        self._export_all(sorted_channels)
-
         # 分类并导出 IPv4 和 IPv6 频道
         ipv4_channels, ipv6_channels = self._classify_channels(sorted_channels)
+
+        # 根据 prefer_ip_version 配置决定 all 文件中的频道顺序
+        prefer_ip_version = self.config.get('MAIN', 'prefer_ip_version', fallback='ipv6')
+        if prefer_ip_version == 'ipv6':
+            all_channels = ipv6_channels + ipv4_channels
+        elif prefer_ip_version == 'ipv4':
+            all_channels = ipv4_channels + ipv6_channels
+        else:
+            all_channels = sorted_channels
+
+        # 导出 all 频道到 all.m3u 和 all.txt 文件
+        self._export_all(all_channels)
+
+        # 导出 IPv4 和 IPv6 频道到各自的文件
         self._export_channels(ipv4_channels, "ipv4")
         self._export_channels(ipv6_channels, "ipv6")
 
         # 导出 CSV 文件（如果启用历史记录）
         if self.enable_history:
-            self._export_csv(sorted_channels)
+            self._export_csv(all_channels)
 
         # 更新进度
         progress_cb(1)
-
-    def _export_all(self, channels: List[Channel]):
-        """导出所有频道到 all.m3u 和 all.txt 文件"""
-        # 获取配置
-        m3u_filename = self.config.get('EXPORTER', 'm3u_filename', fallback='all.m3u')
-        txt_filename = self.config.get('EXPORTER', 'txt_filename', fallback='all.txt')
-
-        # 导出 M3U 文件
-        with open(self.output_dir / m3u_filename, 'w', encoding='utf-8') as f:
-            f.write(self._get_m3u_header())
-            seen_urls = set()
-            for channel in channels:
-                if channel.status != 'online' or channel.url in seen_urls:
-                    continue
-                f.write(f'#EXTINF:-1 tvg-name="{channel.name}" group-title="{channel.category}", {channel.name}\n')
-                f.write(f"{channel.url}\n")
-                seen_urls.add(channel.url)
-
-        # 导出 TXT 文件
-        with open(self.output_dir / txt_filename, 'w', encoding='utf-8') as f:
-            seen_urls = set()
-            current_category = None
-            for channel in channels:
-                if channel.status != 'online' or channel.url in seen_urls:
-                    continue
-                if channel.category != current_category:
-                    if current_category is not None:
-                        f.write("\n")
-                    f.write(f"{channel.category},#genre#\n")
-                    current_category = channel.category
-                f.write(f"{channel.name},{channel.url}\n")
-                seen_urls.add(channel.url)
-
-        logging.info(f"📄 生成的 M3U 文件: {(self.output_dir / m3u_filename).resolve()}")
-        logging.info(f"📄 生成的 TXT 文件: {(self.output_dir / txt_filename).resolve()}")
 
     def _classify_channels(self, channels: List[Channel]) -> (List[Channel], List[Channel]):
         """分类 IPv4 和 IPv6 频道"""
@@ -102,6 +78,33 @@ class ResultExporter:
                 ipv6_channels.append(channel)
 
         return ipv4_channels, ipv6_channels
+
+    def _export_all(self, channels: List[Channel]):
+        """导出所有频道到 all.m3u 和 all.txt 文件"""
+        # 获取配置
+        m3u_filename = self.config.get('EXPORTER', 'm3u_filename', fallback='all.m3u')
+        txt_filename = self.config.get('EXPORTER', 'txt_filename', fallback='all.txt')
+
+        # 导出 M3U 文件
+        with open(self.output_dir / m3u_filename, 'w', encoding='utf-8') as f:
+            f.write(self._get_m3u_header())
+            for channel in channels:
+                f.write(f'#EXTINF:-1 tvg-name="{channel.name}" group-title="{channel.category}", {channel.name}\n')
+                f.write(f"{channel.url}\n")
+
+        # 导出 TXT 文件
+        with open(self.output_dir / txt_filename, 'w', encoding='utf-8') as f:
+            current_category = None
+            for channel in channels:
+                if channel.category != current_category:
+                    if current_category is not None:
+                        f.write("\n")
+                    f.write(f"{channel.category},#genre#\n")
+                    current_category = channel.category
+                f.write(f"{channel.name},{channel.url}\n")
+
+        logging.info(f"📄 生成的 M3U 文件: {(self.output_dir / m3u_filename).resolve()}")
+        logging.info(f"📄 生成的 TXT 文件: {(self.output_dir / txt_filename).resolve()}")
 
     def _export_channels(self, channels: List[Channel], type_name: str):
         """导出频道到指定类型的文件"""

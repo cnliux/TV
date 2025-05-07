@@ -1,8 +1,9 @@
 ![IPTV](https://socialify.git.ci/cnliux/TV/image?description=1&descriptionEditable=IPTV%20%E7%9B%B4%E6%92%AD%E6%BA%90&forks=1&language=1&name=1&owner=1&pattern=Circuit%20Board&stargazers=1&theme=Auto)
 # IPTV 频道管理工具
-镜像地址 https://fastly.jsdelivr.net/gh/cnliux/TV@main/outputs/all.m3u
-
+镜像地址 https://fastly.jsdelivr.net/gh/cnliux/TV@main/outputs/ipv4.m3u
+镜像地址 https://fastly.jsdelivr.net/gh/cnliux/TV@main/outputs/ipv6.m3u
 多功能频道列表转换工具 https://cnliux.github.io/m3u/
+ai写的我只是根据ai去理解，错误我就不管了，尽可能去完善本项目，
 ## 项目概述
 
 这是一个用于管理和优化 IPTV 频道的工具，能够自动获取、解析、分类和测速 IPTV 频道，并导出结果。它可以帮助用户快速筛选出可用的 IPTV 频道，提高观看体验。

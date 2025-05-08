@@ -4,6 +4,7 @@ import asyncio
 import configparser
 from pathlib import Path
 from typing import List, Set, Callable
+import re
 import logging
 from core import (
     SourceFetcher,

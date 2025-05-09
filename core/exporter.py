@@ -89,19 +89,25 @@ class ResultExporter:
         with open(self.output_dir / m3u_filename, 'w', encoding='utf-8') as f:
             f.write(self._get_m3u_header())
             for channel in channels:
+                if channel.status != 'online':  # 过滤不合格的频道
+                    continue
                 f.write(f'#EXTINF:-1 tvg-name="{channel.name}" group-title="{channel.category}", {channel.name}\n')
                 f.write(f"{channel.url}\n")
 
         # 导出 TXT 文件
         with open(self.output_dir / txt_filename, 'w', encoding='utf-8') as f:
+            seen_urls = set()
             current_category = None
             for channel in channels:
+                if channel.status != 'online' or channel.url in seen_urls:  # 过滤不合格的频道和重复的 URL
+                    continue
                 if channel.category != current_category:
                     if current_category is not None:
                         f.write("\n")
                     f.write(f"{channel.category},#genre#\n")
                     current_category = channel.category
                 f.write(f"{channel.name},{channel.url}\n")
+                seen_urls.add(channel.url)
 
         logging.info(f"📄 生成的 M3U 文件: {(self.output_dir / m3u_filename).resolve()}")
         logging.info(f"📄 生成的 TXT 文件: {(self.output_dir / txt_filename).resolve()}")
@@ -114,19 +120,25 @@ class ResultExporter:
 
         # 导出 TXT 文件
         with open(self.output_dir / output_txt, 'w', encoding='utf-8') as f_txt:
+            seen_urls = set()
             current_category = None
             for channel in channels:
+                if channel.status != 'online' or channel.url in seen_urls:  # 过滤不合格的频道和重复的 URL
+                    continue
                 if channel.category != current_category:
                     if current_category is not None:
                         f_txt.write("\n")
                     f_txt.write(f"{channel.category},#genre#\n")
                     current_category = channel.category
                 f_txt.write(f"{channel.name},{channel.url}\n")
+                seen_urls.add(channel.url)
 
         # 导出 M3U 文件
         with open(self.output_dir / output_m3u, 'w', encoding='utf-8') as f_m3u:
             f_m3u.write(self._get_m3u_header())
             for channel in channels:
+                if channel.status != 'online':  # 过滤不合格的频道
+                    continue
                 f_m3u.write(f'#EXTINF:-1 tvg-name="{channel.name}" group-title="{channel.category}", {channel.name}\n')
                 f_m3u.write(f"{channel.url}\n")
 

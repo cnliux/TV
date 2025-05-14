@@ -60,6 +60,9 @@ class ResultExporter:
         if self.enable_history:
             self._export_csv(all_channels)
 
+        # 添加未分类频道到未分类文件
+        self._export_uncategorized_channels(channels)
+
         # 更新进度
         progress_cb(1)
 
@@ -170,3 +173,26 @@ class ResultExporter:
                 ])
 
         logging.info(f"📄 生成的 CSV 文件: {(self.output_dir / filename).resolve()}")
+
+    def _export_uncategorized_channels(self, channels: List[Channel]):
+        """导出未分类频道到未分类文件"""
+        # 获取配置
+        uncategorized_path = self.config.get('PATHS', 'uncategorized_channels_path', fallback='config/uncategorized_channels.txt')
+
+        # 筛选未分类且在线的频道
+        uncategorized_channels = [c for c in channels if c.category == "未分类" and c.status == 'online']
+
+        if uncategorized_channels:
+            # 导出未分类频道到文件
+            with open(self.output_dir / uncategorized_path, 'w', encoding='utf-8') as f:
+                f.write("未分类频道:\n")
+                current_category = None
+                for channel in uncategorized_channels:
+                    if channel.category != current_category:
+                        if current_category is not None:
+                            f.write("\n")
+                        f.write(f"{channel.category},#genre#\n")
+                        current_category = channel.category
+                    f.write(f"{channel.name},{channel.url}\n")
+
+            logging.info(f"📄 生成的未分类频道文件: {(self.output_dir / uncategorized_path).resolve()}")

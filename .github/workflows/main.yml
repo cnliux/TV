@@ -1,8 +1,10 @@
 name: 每日更新
 
+name: 每日更新
+
 on:
   schedule:
-    - cron: '0 0,12 * * *'  # 每12小时一次
+    - cron: '0 3 * * *'  # 每天 3 点触发
       runs-on: ubuntu-latest
       env:
         TZ: Asia/Shanghai  # 设置时区为北京时间

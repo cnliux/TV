@@ -1,7 +1,5 @@
 name: 每日更新
 
-name: 每日更新
-
 on:
   schedule:
     - cron: '0 3 * * *'  # 每天 3 点触发

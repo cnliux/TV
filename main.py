@@ -38,14 +38,12 @@ class StageProgress:
         bar = '▊' * self.bar_length
         print(f"\r{self.stage} [{bar}] 100.0%")
 
-
 def is_blacklisted(channel, blacklist):
     """检查频道是否在黑名单中"""
     for entry in blacklist:
         if entry in channel.url or channel.url == entry or channel.name == entry:
             return True
     return False
-
 
 async def main():
     """主工作流程"""

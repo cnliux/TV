@@ -2,7 +2,7 @@ name: Auto Delete Old Workflow Runs (北京时间)
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # 北京时间每天午夜12点（UTC时间16:00）
+    - cron: '0 16 */15 * *'  # 北京时间每15天午夜12点（UTC时间16:00）
   workflow_dispatch:
 
 jobs:
@@ -20,5 +20,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          retain_days: 14
+          retain_days: 15
           keep_minimum_runs: 1

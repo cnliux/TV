@@ -37,14 +37,18 @@ class PlaylistParser:
         return raw_name.split(',')[-1].strip()
 
     def _clean_url(self, raw_url: str) -> str:
-        """清理 URL，去除 $ 及其后面的参数和指定查询参数"""
-        # 先去除 $ 及其后面的参数
-        url = raw_url.split('$')[0].strip()
+        """清理 URL，保留IPv6地址中的特殊字符"""
+        # 分离参数部分但保留IPv6地址
+        if '://[' in raw_url:
+            # IPv6地址特殊处理
+            base_url = raw_url
+        else:
+            base_url = raw_url.split('$')[0].strip()
         
         # 如果有需要移除的参数，处理查询参数
         if self.params_to_remove:
             try:
-                parsed = urlparse(url)
+                parsed = urlparse(base_url)
                 if parsed.query:
                     query_params = parse_qs(parsed.query, keep_blank_values=True)
                     # 移除指定的参数
@@ -54,8 +58,8 @@ class PlaylistParser:
                     }
                     # 重新构建URL
                     new_query = urlencode(filtered_params, doseq=True)
-                    url = urlunparse(parsed._replace(query=new_query))
+                    base_url = urlunparse(parsed._replace(query=new_query))
             except Exception as e:
-                logging.warning(f"URL参数处理失败: {url}, 错误: {str(e)}")
+                logging.warning(f"URL参数处理失败: {base_url}, 错误: {str(e)}")
         
-        return url
+        return base_url

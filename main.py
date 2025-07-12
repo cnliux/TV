@@ -14,26 +14,24 @@ from core import (
     ResultExporter
 )
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 class StageProgress:
     """阶段进度显示器"""
     
     def __init__(self, stage_name: str, total: int, update_interval: int = 10):
         self.stage = stage_name
-        self.total = max(total, 1)
+        self.total = max(total, 1)  # 确保不为零
         self.current = 0
         self.bar_length = 30
         self.update_interval = update_interval
 
     def update(self, n=1):
         self.current = min(self.current + n, self.total)
-        if self.current % self.update_interval == 0 or self.current == self.total:
-            percent = self.current / self.total * 100
-            filled = int(self.bar_length * self.current / self.total)
-            bar = '▊' * filled + ' ' * (self.bar_length - filled)
-            print(f"\r{self.stage} [{bar}] {percent:.1f}%", end='', flush=True)
+        percent = min(100.0, self.current / self.total * 100)
+        filled = min(self.bar_length, int(self.bar_length * self.current / self.total))
+        bar = '▊' * filled + ' ' * (self.bar_length - filled)
+        print(f"\r{self.stage} [{bar}] {percent:.1f}%", end='', flush=True)
+        if self.current == self.total:
+            print()  # 完成后换行
 
     def complete(self):
         bar = '▊' * self.bar_length
@@ -57,6 +55,15 @@ async def main():
         if not config_path.exists():
             raise FileNotFoundError(f"❌ 配置文件不存在: {config_path}")
         config.read(config_path, encoding='utf-8')
+        
+        # 配置日志
+        debug_mode = config.getboolean('DEBUG', 'enable_debug_logging', fallback=False)
+        if debug_mode:
+            logging.basicConfig(level=logging.DEBUG)
+            logging.getLogger("asyncio").setLevel(logging.INFO)
+        else:
+            logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
 
         # 获取 output_dir
         output_dir = Path(config.get('MAIN', 'output_dir', fallback='outputs'))
@@ -192,6 +199,7 @@ async def main():
         logger.info(f"📂 输出目录: {output_dir.resolve()}")
 
     except Exception as e:
+        logger = logging.getLogger(__name__)
         logger.error(f"❌ 发生错误: {str(e)}")
         logger.info("💡 排查建议:")
         logger.info("1. 检查 config 目录下的文件是否存在")
@@ -206,4 +214,5 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:
+        logger = logging.getLogger(__name__)
         logger.error(f"❌ 全局异常捕获: {str(e)}")

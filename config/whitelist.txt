@@ -3,4 +3,3 @@
 # bbc.co.uk
 # 完整URL
 #http://example.com/live.m3u8
-http://8.138.7.223/tv/

@@ -4,6 +4,17 @@ https://aktv.space/live.m3u
 https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u
 https://www.254950134.xyz/final_streams.txt
 https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u
+https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/refs/heads/main/bbxx.txt
+https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/refs/heads/main/bbxx_lite.txt
+https://raw.githubusercontent.com/vbskycn/iptv/refs/heads/master/tv/hd.txt
+https://github.com/vbskycn/iptv/raw/refs/heads/master/tv/iptv4.txt
+https://raw.githubusercontent.com/vbskycn/iptv/refs/heads/master/tv/iptv6.txt
+https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u
+https://raw.githubusercontent.com/Rivens7/Livelist/refs/heads/main/CCTV.m3u
+https://raw.githubusercontent.com/TianmuTNT/iptv/refs/heads/main/iptv.txt
+https://raw.githubusercontent.com/big-mouth-cn/tv/refs/heads/main/iptv.m3u
+https://raw.githubusercontent.com/alantang1977/IPTV_SuperB/refs/heads/main/output/live_ipv6.txt
+https://github.com/alantang1977/IPTV_SuperB/blob/main/output/live_ipv4.txt
 http://3501776.xyz:35455/tv.m3u
 http://home.kuaidi521.com:35455/tv.m3u
 http://xiaoya.crccxw.top:35455/tv.m3u

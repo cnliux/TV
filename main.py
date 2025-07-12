@@ -29,7 +29,8 @@ class StageProgress:
         percent = min(100.0, self.current / self.total * 100)
         filled = min(self.bar_length, int(self.bar_length * self.current / self.total))
         bar = '▊' * filled + ' ' * (self.bar_length - filled)
-        print(f"\r{self.stage} [{bar}] {percent:.1f}%", end='', flush=True)
+        if self.update_interval > 0 and self.current % self.update_interval == 0:
+            print(f"\r{self.stage} [{bar}] {percent:.1f}%", end='', flush=True)
         if self.current == self.total:
             print()  # 完成后换行
 
@@ -109,6 +110,14 @@ async def main():
         if not templates_path.exists():
             raise FileNotFoundError(f"❌ 缺少分类模板文件: {templates_path}")
 
+        # 读取 PROGRESS 配置
+        progress_config = config['PROGRESS']
+        update_interval_fetch = int(progress_config.get('update_interval_fetch', 10))
+        update_interval_parse = int(progress_config.get('update_interval_parse', 40))
+        update_interval_classify = int(progress_config.get('update_interval_classify', 50))
+        update_interval_speedtest = int(progress_config.get('update_interval_speedtest', 100))
+        update_interval_export = int(progress_config.get('update_interval_export', 1))
+
         # 阶段1: 获取订阅源
         with open(urls_path, 'r', encoding='utf-8') as f:
             urls = [line.strip() for line in f if line.strip()]
@@ -117,14 +126,14 @@ async def main():
             timeout=fetcher_timeout,
             concurrency=fetcher_concurrency
         )
-        progress = StageProgress("🌐 获取源数据", len(urls), update_interval=10)
+        progress = StageProgress("🌐 获取源数据", len(urls), update_interval=update_interval_fetch)
         contents = await fetcher.fetch_all(urls, progress.update)
         progress.complete()
 
         # 阶段2: 解析频道
         parser = PlaylistParser(config)
         valid_contents = [c for c in contents if c.strip()]
-        progress = StageProgress("🔍 解析频道", len(valid_contents), update_interval=20)
+        progress = StageProgress("🔍 解析频道", len(valid_contents), update_interval=update_interval_parse)
         channels = []
         for content in valid_contents:
             channels.extend(parser.parse(content))
@@ -133,7 +142,7 @@ async def main():
 
         # 阶段3: 智能分类
         matcher = AutoCategoryMatcher(str(templates_path))
-        progress = StageProgress("🏷️ 分类频道", len(channels), update_interval=50)
+        progress = StageProgress("🏷️ 分类频道", len(channels), update_interval=update_interval_classify)
         for chan in channels:
             chan.name = matcher.normalize_channel_name(chan.name)
             chan.category = matcher.match(chan.name)
@@ -167,7 +176,7 @@ async def main():
             min_download_speed=tester_min_download_speed,
             enable_logging=tester_enable_logging
         )
-        progress = StageProgress("⏱️ 测速测试", len(unique_channels), update_interval=100)
+        progress = StageProgress("⏱️ 测速测试", len(unique_channels), update_interval=update_interval_speedtest)
         failed_urls = set()
         await tester.test_channels(unique_channels, progress.update, failed_urls, whitelist)
         progress.complete()
@@ -189,7 +198,7 @@ async def main():
             config=config,
             matcher=matcher
         )
-        progress = StageProgress("💾 导出结果", 1, update_interval=1)
+        progress = StageProgress("💾 导出结果", 1, update_interval=update_interval_export)
         exporter.export(unique_channels, progress.update)
         progress.complete()
 

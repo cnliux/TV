@@ -53,7 +53,7 @@ class ResultExporter:
     def _classify_channels(self, channels: List[Channel]) -> (List[Channel], List[Channel]):
         """分类IPv4和IPv6频道"""
         ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
-        ipv6_pattern = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|(?:[a-fA-F0-9:]+))(?::\d+)?')
+        ipv6_pattern = re.compile(r'https?://\[(?:[a-fA-F0-9:]+)\](?::\d+)?')
 
         ipv4_channels = []
         ipv6_channels = []
@@ -66,6 +66,8 @@ class ResultExporter:
             elif ipv4_pattern.search(url):
                 ipv4_channels.append(channel)
                 self._log_classification(channel, "IPv4")
+            else:
+                logging.warning(f"未匹配到 IPv4 或 IPv6: {channel.name} ({channel.url})")
 
         logging.info(f"分类统计: IPv4={len(ipv4_channels)}, IPv6={len(ipv6_channels)}")
         return ipv4_channels, ipv6_channels
@@ -79,10 +81,12 @@ class ResultExporter:
         """导出合并文件(all.m3u/all.txt)"""
         # 确定频道顺序
         prefer_ip_version = self.config.get('MAIN', 'prefer_ip_version', fallback='both')
-        all_channels = (
-            ipv6_channels + ipv4_channels if prefer_ip_version == 'ipv6' 
-            else ipv4_channels + ipv6_channels
-        )
+        if prefer_ip_version == 'ipv6':
+            all_channels = ipv6_channels + ipv4_channels
+        elif prefer_ip_version == 'ipv4':
+            all_channels = ipv4_channels + ipv6_channels
+        else:
+            all_channels = ipv4_channels + ipv6_channels
 
         # 导出M3U
         m3u_path = self.output_dir / self.config.get('EXPORTER', 'm3u_filename', fallback='all.m3u')

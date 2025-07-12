@@ -4,6 +4,7 @@ import aiohttp
 from typing import List, Callable, Set
 from .models import Channel
 import logging
+import re
 
 class SpeedTester:
     """测速模块"""
@@ -27,8 +28,15 @@ class SpeedTester:
 
     def is_in_white_list(self, channel: Channel, white_list: set) -> bool:
         """判断频道是否在白名单中"""
+        # 使用规范化名称检查
+        normalized_name = re.sub(r'[^\w\s]', '', channel.name).strip().lower()
+        normalized_url = channel.url.lower()
+        
         for entry in white_list:
-            if entry in channel.url or channel.url == entry or channel.name == entry:
+            norm_entry = re.sub(r'[^\w\s]', '', entry).strip().lower()
+            if (norm_entry in normalized_url or 
+                norm_entry == normalized_url or 
+                norm_entry == normalized_name):
                 return True
         return False
 
@@ -100,21 +108,27 @@ class SpeedTester:
 
                         if download_speed < self.min_download_speed:  # 直接使用 KB/s 单位进行比较
                             channel.status = 'offline'
-                            failed_urls.add(channel.url)
+                            if attempt == self.max_attempts - 1:
+                                failed_urls.add(channel.url)
                         else:
                             channel.status = 'online'
+                            break
 
-                        break
-
+                except aiohttp.ClientError as e:
+                    if self.enable_logging:
+                        self.logger.error(f"❌ 网络错误 (尝试 {attempt+1}/{self.max_attempts}): {channel.name} ({channel.url}), 错误: {str(e)}")
+                    if attempt == self.max_attempts - 1:
+                        channel.status = 'offline'
+                        failed_urls.add(channel.url)
                 except asyncio.TimeoutError:
                     if self.enable_logging:
-                        self.logger.error(f"❌ 测速超时 (尝试 {attempt + 1}/{self.max_attempts}): {channel.name} ({channel.url})")
+                        self.logger.error(f"❌ 测速超时 (尝试 {attempt+1}/{self.max_attempts}): {channel.name} ({channel.url})")
                     if attempt == self.max_attempts - 1:
                         channel.status = 'offline'
                         failed_urls.add(channel.url)
                 except Exception as e:
                     if self.enable_logging:
-                        self.logger.error(f"❌ 测速异常 (尝试 {attempt + 1}/{self.max_attempts}): {channel.name} ({channel.url}), 错误: {str(e)}")
+                        self.logger.error(f"❌ 未知错误 (尝试 {attempt+1}/{self.max_attempts}): {channel.name} ({channel.url}), 错误: {str(e)}")
                     if attempt == self.max_attempts - 1:
                         channel.status = 'offline'
                         failed_urls.add(channel.url)

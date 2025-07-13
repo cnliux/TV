@@ -21,16 +21,26 @@ class PlaylistParser:
     def parse(self, content: str) -> Generator[Channel, None, None]:
         """解析内容生成频道列表（生成器）"""
         channel_matches = self.CHANNEL_REGEX.findall(content)
+        index_counter = 0  # 添加顺序计数器
+        
         if channel_matches:
             for name, url in channel_matches:
-                # 清理 URL，去除 $ 及其后面的参数
                 clean_url = self._clean_url(url)
-                yield Channel(name=self._clean_name(name), url=clean_url)
+                index_counter += 1
+                yield Channel(
+                    name=self._clean_name(name),
+                    url=clean_url,
+                    added_index=index_counter
+                )
         else:
             for name, url in self.EXTINF_REGEX.findall(content):
-                # 清理 URL，去除 $ 及其后面的参数
                 clean_url = self._clean_url(url)
-                yield Channel(name=self._clean_name(name), url=clean_url)
+                index_counter += 1
+                yield Channel(
+                    name=self._clean_name(name),
+                    url=clean_url,
+                    added_index=index_counter
+                )
 
     def _clean_name(self, raw_name: str) -> str:
         """清理频道名称"""

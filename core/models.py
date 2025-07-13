@@ -10,3 +10,4 @@ class Channel:
     status: str = "pending"
     response_time: float = 0.0
     download_speed: float = 0.0
+    added_index: int = 0  # 新增：跟踪添加顺序

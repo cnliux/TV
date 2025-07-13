@@ -38,12 +38,14 @@ class StageProgress:
         bar = '▊' * self.bar_length
         print(f"\r{self.stage} [{bar}] 100.0%")
 
+
 def is_blacklisted(channel, blacklist):
     """检查频道是否在黑名单中"""
     for entry in blacklist:
         if entry in channel.url or channel.url == entry or channel.name == entry:
             return True
     return False
+
 
 async def main():
     """主工作流程"""
@@ -137,6 +139,7 @@ async def main():
             channels.extend(parser.parse(content))
             progress.update()
         progress.complete()
+        logger.info(f"解析完成，共获取 {len(channels)} 个频道")
 
         # 阶段3: 智能分类
         matcher = AutoCategoryMatcher(str(templates_path))
@@ -146,10 +149,14 @@ async def main():
             chan.category = matcher.match(chan.name)
             progress.update()
         progress.complete()
+        
+        # 统计未分类频道数量
+        uncategorized_count = sum(1 for c in channels if c.category == "未分类")
+        logger.info(f"分类完成: 已分类 {len(channels)-uncategorized_count} 个频道, 未分类 {uncategorized_count} 个频道")
 
-        # 过滤频道：仅保留模板中定义的频道
-        filtered_channels = [chan for chan in channels if matcher.is_in_template(chan.name)]
-        logger.info(f"过滤后频道数量: {len(filtered_channels)}/{len(channels)}")
+        # 不过滤未分类频道 - 保留所有频道
+        filtered_channels = channels
+        logger.info(f"所有频道保留: {len(filtered_channels)} 个")
 
         # 过滤黑名单
         filtered_channels = [chan for chan in filtered_channels if not is_blacklisted(chan, blacklist)]
@@ -179,6 +186,10 @@ async def main():
         await tester.test_channels(unique_channels, progress.update, failed_urls, whitelist)
         progress.complete()
         logger.info("测速测试完成")
+
+        # 统计在线频道数量
+        online_count = sum(1 for c in unique_channels if c.status == 'online')
+        logger.info(f"测速结果: 在线 {online_count}/{len(unique_channels)}, 离线 {len(unique_channels)-online_count}")
 
         # 写入失败的 URL
         if failed_urls:
@@ -212,6 +223,7 @@ async def main():
         logger.info("1. 检查 config 目录下的文件是否存在")
         logger.info("2. 确认订阅源URL可访问")
         logger.info("3. 验证分类模板格式是否正确")
+        logger.exception(e)  # 打印完整异常堆栈
 
 if __name__ == "__main__":
     if os.name == 'nt':
@@ -223,3 +235,4 @@ if __name__ == "__main__":
     except Exception as e:
         logger = logging.getLogger(__name__)
         logger.error(f"❌ 全局异常捕获: {str(e)}")
+        logger.exception(e)  # 打印完整异常堆栈

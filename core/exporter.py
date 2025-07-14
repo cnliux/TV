@@ -14,7 +14,7 @@ class ResultExporter:
         self._ensure_dirs()
         
         # 日志控制
-        self.debug_logging = config.getboolean('LOGGING', 'debug_classification', fallback=False)
+        self.debug_logging = config.getboolean('DEBUG', 'enable_debug_classification', fallback=False)
 
     def _ensure_dirs(self):
         """确保所有输出目录存在"""
@@ -166,7 +166,13 @@ class ResultExporter:
             raise
 
     def _export_uncategorized_channels(self, channels: List[Channel]):
-        """导出未分类频道"""
+        """导出未分类频道（根据配置决定是否执行）"""
+        # 检查是否启用未分类导出
+        write_uncategorized = self.config.getboolean('EXPORTER', 'write_uncategorized', fallback=True)
+        if not write_uncategorized:
+            logging.info("配置已禁用未分类频道导出")
+            return
+            
         try:
             path = Path(self.config.get('PATHS', 'uncategorized_channels_path', fallback='config/uncategorized_channels.txt'))
             path.parent.mkdir(parents=True, exist_ok=True)

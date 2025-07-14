@@ -21,33 +21,28 @@ class PlaylistParser:
     def parse(self, content: str) -> Generator[Channel, None, None]:
         """解析内容生成频道列表（生成器）"""
         channel_matches = self.CHANNEL_REGEX.findall(content)
-        index_counter = 0  # 添加顺序计数器
-        
         if channel_matches:
             for name, url in channel_matches:
+                # 清理 URL，去除 $ 及其后面的参数
                 clean_url = self._clean_url(url)
-                index_counter += 1
-                yield Channel(
-                    name=self._clean_name(name),
-                    url=clean_url,
-                    added_index=index_counter
-                )
+                yield Channel(name=self._clean_name(name), url=clean_url)
         else:
             for name, url in self.EXTINF_REGEX.findall(content):
+                # 清理 URL，去除 $ 及其后面的参数
                 clean_url = self._clean_url(url)
-                index_counter += 1
-                yield Channel(
-                    name=self._clean_name(name),
-                    url=clean_url,
-                    added_index=index_counter
-                )
+                yield Channel(name=self._clean_name(name), url=clean_url)
 
     def _clean_name(self, raw_name: str) -> str:
-        """清理频道名称中的额外信息"""
+        """清理频道名称中的额外信息（包括$IPV4等元数据）"""
+        # 1. 去除前后空格
         name = raw_name.strip()
-        # 移除$符号及其后的所有内容
-        return name.split('$')[0].strip()
-    
+        
+        # 2. 移除$符号及其后的所有内容（包括IPV4信息、线路信息和URL）
+        if '$' in name:
+            name = name.split('$')[0].strip()
+        
+        return name
+
     def _clean_url(self, raw_url: str) -> str:
         """清理 URL，保留IPv6地址中的特殊字符"""
         # 分离参数部分但保留IPv6地址

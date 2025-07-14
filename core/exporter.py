@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from pathlib import Path
 from typing import List, Callable, Set
 import logging
@@ -71,32 +70,25 @@ class ResultExporter:
         return set()
 
     def _classify_channels(self, channels: List[Channel]) -> (List[Channel], List[Channel]):
-        """
-        分类IPv4和IPv6频道。
-
-        :param channels: 频道列表
-        :return: (IPv4频道列表, IPv6频道列表)
-        """
+        """分类IPv4和IPv6频道"""
         ipv6_pattern = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[a-fA-F0-9:]{4,})')
-        ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
+        ipv4_pattern = re.compile(r'https?://(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[\w.-]+)(?::\d+)?')
 
         ipv4_channels = []
         ipv6_channels = []
-        domain_handling = self.config.get('MAIN', 'domain_handling', fallback='ipv4')
 
         for channel in channels:
             url = channel.url
             if ipv6_pattern.search(url):
                 ipv6_channels.append(channel)
+                self._log_classification(channel, "IPv6")
             elif ipv4_pattern.search(url):
                 ipv4_channels.append(channel)
+                self._log_classification(channel, "IPv4")
             else:
-                if domain_handling == 'ipv6':
-                    ipv6_channels.append(channel)
-                else:
-                    ipv4_channels.append(channel)
+                logging.warning(f"未匹配到 IPv4 或 IPv6: {channel.name} ({channel.url})")
 
-        logging.info(f"IP分类统计: IPv4={len(ipv4_channels)}, IPv6={len(ipv6_channels)}")
+        logging.info(f"分类统计: IPv4={len(ipv4_channels)}, IPv6={len(ipv6_channels)}")
         return ipv4_channels, ipv6_channels
 
     def _export_combined_files(self, ipv4_channels: List[Channel], ipv6_channels: List[Channel]):

@@ -43,9 +43,11 @@ class PlaylistParser:
                 )
 
     def _clean_name(self, raw_name: str) -> str:
-        """清理频道名称"""
-        return raw_name.split(',')[-1].strip()
-
+        """清理频道名称中的额外信息"""
+        name = raw_name.strip()
+        # 移除$符号及其后的所有内容
+        return name.split('$')[0].strip()
+    
     def _clean_url(self, raw_url: str) -> str:
         """清理 URL，保留IPv6地址中的特殊字符"""
         # 分离参数部分但保留IPv6地址

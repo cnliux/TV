@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Callable, Set
 import logging
 import re
-from .models import Channel
+from core.models import Channel
 
 class ResultExporter:
     def __init__(self, output_dir: str, enable_history: bool, template_path: str, config, matcher):

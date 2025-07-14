@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
+import os
+import asyncio
+import configparser
 from pathlib import Path
-from typing import List, Callable, Set
-import logging
-import re
-from core.models import Channel
+from typing import List, Set, Callable
 
 class ResultExporter:
     def __init__(self, output_dir: str, enable_history: bool, template_path: str, config, matcher):

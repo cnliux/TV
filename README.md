@@ -1,97 +1,96 @@
-![IPTV](https://socialify.git.ci/cnliux/TV/image?description=1&descriptionEditable=IPTV%20%E7%9B%B4%E6%92%AD%E6%BA%90&forks=1&language=1&name=1&owner=1&pattern=Circuit%20Board&stargazers=1&theme=Auto)
-# IPTV 频道管理工具
-镜像地址 https://fastly.jsdelivr.net/gh/cnliux/TV@main/outputs/ipv4.m3u
-镜像地址 https://fastly.jsdelivr.net/gh/cnliux/TV@main/outputs/ipv6.m3u
 
-## 项目概述
+# IPTV频道管理工具
 
-这是一个用于管理和优化 IPTV 频道的工具，能够自动获取、解析、分类和测速 IPTV 频道，并导出结果。它可以帮助用户快速筛选出可用的 IPTV 频道，提高观看体验。
+![IPTV标志](https://socialify.git.ci/cnliux/TV/image?description=1&descriptionEditable=IPTV%20%E7%9B%B4%E6%92%AD%E6%BA%90&forks=1&language=1&name=1&owner=1&pattern=Circuit%20Board&stargazers=1&theme=Auto)
 
-## 功能特点
+------------
+### 免责条款
+使用风险：您使用本技术内容时，需自行承担所有风险，包括但不限于数据丢失、系统故障或兼容性问题。
+无保证声明：本技术内容不包含任何形式的明示或暗示保证，包括但不限于适销性、特定用途的适用性或不侵权保证。
+责任限制：对于因使用本技术内容而导致的任何直接、间接、附带或后果性损害，我们不承担任何责任。
 
-- **自动获取订阅源**：从指定的订阅源 URL 获取 IPTV 频道数据。
-- **智能分类**：根据预定义的分类模板对频道进行自动分类。
-- **测速功能**：对每个频道进行速度测试，确保只保留可用且速度良好的频道。
-- **黑名单过滤**：支持通过黑名单过滤不需要的频道。
-- **白名单优先**：支持通过白名单优先排序频道，白名单中的频道在各自分类中优先显示。
-- **多格式导出**：支持导出为 M3U、TXT 和 CSV 格式，方便不同设备使用。
-- **IPv4/IPv6 分类导出**：将频道按 IPv4 和 IPv6 地址分别导出，便于针对性使用。
+## 🌐 镜像地址
 
-## 项目结构
-project/
+---
 
--├── core/
+## 📌 项目概述
+自动化IPTV频道管理解决方案，支持：
+- 多源订阅抓取
+- 智能规则分类
+- 实时速度测试
+- 多格式导出
 
--│   ├── __init__.py
+---
 
--│   ├── fetcher.py
+# 🚦 使用指南
+- IPv4编辑config.ini配置参数
 
--│   ├── parser.py
+- IPv4将订阅源添加到urls.txt
 
--│   ├── matcher.py
+- IPv4运行主程序：
 
--│   ├── tester.py
-
--│   ├── exporter.py
-
--│   └── models.py
-
--├── config/
-
--│   ├── config.ini
-
--│   ├── urls.txt
-
--│   ├── templates.txt
-
--│   ├── blacklist.txt
-
--│   └── whitelist.txt
-
--├── main.py
-
--└── requirements.txt
-
-### 说明
-
-- **core/**：核心模块，包含项目的主要功能实现。
-  - `__init__.py`：初始化文件，使 core 被识别为一个 Python 包。
-  - `fetcher.py`：订阅源获取器，负责从指定 URL 获取 IPTV 频道数据。
-  - `parser.py`：解析器，用于解析获取到的频道数据。
-  - `matcher.py`：分类匹配器，根据预定义的模板对频道进行分类。
-  - `tester.py`：测速模块，对每个频道进行速度测试。
-  - `exporter.py`：导出模块，将处理后的结果导出为多种格式。
-  - `models.py`：定义项目中使用的数据模型。
-- **config/**：配置文件，包含项目运行所需的各类配置。
-  - `config.ini`：主配置文件，设置输出目录、测速参数等。
-  - `urls.txt`：订阅源 URL 列表。
-  - `templates.txt`：频道分类模板。
-  - `blacklist.txt`：黑名单列表，包含需要过滤的域名、URL 或频道名称。
-  - `whitelist.txt`：白名单列表，包含需要优先保留的域名、URL 或频道名称。
-- **main.py**：项目的入口文件，包含主工作流程。
-- **requirements.txt**：项目依赖的 Python 包列表，用于安装项目运行所需的依赖。
-
-## 配置项目
-
-1. 编辑 `config/config.ini` 文件，设置输出目录、测速参数等。
-2. 在 `config/urls.txt` 中添加您的 IPTV 订阅源 URL。
-3. 在 `config/templates.txt` 中定义频道分类规则。
-4. 在 `config/blacklist.txt` 中添加需要过滤的域名、URL 或频道名称。
-5. 在 `config/whitelist.txt` 中添加需要优先保留的域名、URL 或频道名称。
-
-## 更新日志
-
-### v1.0.0 (2025-4-12)
-- **新增功能**：
-  - **白名单支持**：支持通过白名单优先排序频道，白名单中的频道在各自分类中优先显示。
-- **优化**：
-  - 改进了频道排序逻辑，确保白名单频道在分类内部优先显示。
-  - 优化了进度条显示，提升了用户体验。
-### v1.0.1 (2025-4-13)
-- **新增功能**：
-  - **URL 参数过滤**：新增 `[URL_FILTER]` 配置，用于移除 URL 中的指定参数，提高数据纯净度。在 `config.ini` 中配置 `remove_params` 以指定需要移除的参数。
-
-其他
+- bash
+- python main.py
+## 📂 项目结构详解
+- project/
+- │
+- ├── core/                       # 核心功能模块
+- │   ├── __init__.py             # 模块初始化文件
+- │   ├── fetcher.py              # 订阅源抓取模块
+- │   │   ├── SourceFetcher       # 多线程 URL 抓取器
+- │   │   └── 支持超时/重试机制
+- │   │
+- │   ├── parser.py               # 播放列表解析器
+- │   │   ├── PlaylistParser      # 支持 M3U/EXTINF 格式
+- │   │   └── URL 参数过滤
+- │   │
+- │   ├── matcher.py              # 智能分类引擎
+- │   │   ├── AutoCategoryMatcher # 自动分类匹配器
+- │   │   ├── 正则规则匹配
+- │   │   └── 频道名称标准化
+- │   │
+- │   ├── tester.py               # 速度测试模块
+- │   │   ├── SpeedTester         # 多线程测速器
+- │   │   └── 白名单跳过机制
+- │   │
+- │   ├── exporter.py             # 结果导出器
+- │   │   ├── ResultExporter      # 导出结果
+- │   │   ├── 支持 M3U/TXT/CSV 格式
+- │   │   └── IP 版本分类导出
+- │   │
+- │   └── models.py               # 数据模型
+- │       └── Channel 类定义
+- │
+- ├── config/                     # 配置目录
+- │   ├── config.ini              # 主配置文件
+- │   │   ├── [MAIN] 基础设置
+- │   │   ├── [FETCHER] 抓取参数
+- │   │   ├── [TESTER] 测速设置
+- │   │   └── [DEBUG] 调试选项
+- │   │
+- │   ├── urls.txt                # 订阅源列表
+- │   ├── templates.txt           # 分类规则模板
+- │   ├── blacklist.txt           # 黑名单数据
+- │   └── whitelist.txt           # 白名单数据
+- │
+- ├── outputs/                    # 生成文件目录
+- │   ├── ipv4.m3u                # IPv4 频道列表
+- │   ├── ipv6.m3u                # IPv6 频道列表
+- │   ├── all.txt                 # 合并文本格式
+- │   └── history_*.csv           # 历史记录文件
+- │
+- ├── main.py                     # 程序主入口
+- ├── requirements.txt            # 依赖库清单
+- └── README.md                   # 项目文档
+### 典型工作流程
+```mermaid
+graph TD
+    A[main.py] --> B[获取订阅源]
+    B --> C[解析频道数据]
+    C --> D[智能分类]
+    D --> E[速度测试]
+    E --> F[结果导出]
+    F --> G[生成播放列表]
 [![Star History Chart](https://api.star-history.com/svg?repos=cnliux/tv&type=Date)](https://www.star-history.com/#cnliux/tv&Date)
 
-![Visitor Count](https://profile-counter.glitch.me/cnliux_TV/count.svg)
+

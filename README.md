@@ -82,7 +82,6 @@
 - ├── main.py                     # 程序主入口
 - ├── requirements.txt            # 依赖库清单
 - └── README.md                   # 项目文档
-  [![Star History Chart](https://api.star-history.com/svg?repos=cnliux/tv&type=Date)](https://www.star-history.com/#cnliux/tv&Date)
 ### 典型工作流程
 ```mermaid
 graph TD

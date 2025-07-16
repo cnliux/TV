@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 from pathlib import Path
-from typing import List, Dict, Set, Callable, Tuple
+from typing import List, Dict, Set, Callable, Tuple, Optional
 import re
 import configparser
 from datetime import datetime
@@ -53,13 +53,14 @@ class ResultExporter:
         self.uncategorized_path.parent.mkdir(parents=True, exist_ok=True)
         self.failed_urls_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def export(self, channels: List[Channel], progress_cb: Callable) -> Dict:
+    def export(self, channels: List[Channel], progress_cb: Callable, include_uncat: bool = False) -> Dict:
         """
         主导出流程
         
         Args:
             channels: 频道列表
             progress_cb: 进度回调函数
+            include_uncat: 是否包含未分类频道
             
         Returns:
             包含导出统计信息的字典
@@ -76,7 +77,7 @@ class ResultExporter:
             
             # 按模板排序已分类频道
             sorted_channels = self.matcher.sort_channels_by_template(
-                categorized, whitelist, include_uncategorized=False)
+                categorized, whitelist, include_uncategorized=include_uncat)
             
             # 按IP版本分类
             ipv4, ipv6 = self._classify_channels(sorted_channels)
@@ -182,7 +183,7 @@ class ResultExporter:
 
     def _write_m3u(self, path: Path, channels: List[Channel]) -> int:
         """
-        导出M3U格式的播放列表
+        导出M3U格式的播放列表（修复：按模板顺序排列节目）
         
         Args:
             path: 输出文件路径
@@ -192,8 +193,20 @@ class ResultExporter:
             成功导出的频道数量
         """
         try:
+            # 按分类分组频道
+            category_map = {}
+            for chan in channels:
+                if chan.category == "未分类":
+                    continue
+                    
+                if chan.category not in category_map:
+                    category_map[chan.category] = []
+                category_map[chan.category].append(chan)
+            
+            # 按模板顺序获取分类
+            ordered_categories = self._get_ordered_categories()
+            
             seen_urls = set()
-            current_category = None
             count = 0
             
             with open(path, 'w', encoding='utf-8') as f:
@@ -204,30 +217,34 @@ class ResultExporter:
                 f.write(f"#EXT-X-PLAYLIST-TYPE:VOD\n")
                 f.write(f"#EXT-X-VERSION:3\n\n")
                 
-                # 写入频道条目
-                for chan in channels:
-                    if chan.category == "未分类" or chan.url in seen_urls:
+                # 按模板顺序写入分类
+                for category in ordered_categories:
+                    if category not in category_map:
                         continue
                         
                     # 分类分组标记
-                    if chan.category != current_category:
-                        if current_category is not None:
-                            f.write("\n")
-                        current_category = chan.category
-                        f.write(f"#EXTGRP:{current_category}\n")
+                    f.write(f"#EXTGRP:{category}\n")
                     
-                    # 频道信息
-                    logo = self.logo_template.format(name=chan.name)
-                    f.write(
-                        f'#EXTINF:-1 tvg-id="{chan.tvg_id}" '
-                        f'tvg-name="{chan.tvg_name}" '
-                        f'tvg-logo="{logo}" '
-                        f'group-title="{chan.category}",{chan.name}\n'
-                    )
-                    f.write(f"{chan.url}\n")
+                    # 写入该分类下的频道
+                    for chan in category_map[category]:
+                        if chan.url in seen_urls:
+                            continue
+                            
+                        # 频道信息
+                        logo = self.logo_template.format(name=chan.name)
+                        f.write(
+                            f'#EXTINF:-1 tvg-id="{chan.tvg_id}" '
+                            f'tvg-name="{chan.tvg_name}" '
+                            f'tvg-logo="{logo}" '
+                            f'group-title="{category}",{chan.name}\n'
+                        )
+                        f.write(f"{chan.url}\n")
+                        
+                        seen_urls.add(chan.url)
+                        count += 1
                     
-                    seen_urls.add(chan.url)
-                    count += 1
+                    # 分类间空行
+                    f.write("\n")
                 
                 # 文件尾
                 f.write(f"\n# 总计: {count} 个频道\n")
@@ -238,6 +255,18 @@ class ResultExporter:
         except Exception as e:
             logger.error(f"导出 M3U 文件失败: {path} - {str(e)}")
             return 0
+
+    def _get_ordered_categories(self) -> List[str]:
+        """获取按模板顺序排列的分类列表"""
+        # 获取模板中的所有分类顺序
+        template_categories = self.matcher.categories.keys()
+        
+        # 获取模板中定义的分类顺序
+        if hasattr(self.matcher, '_category_order'):
+            return self.matcher._category_order
+        
+        # 如果没有明确的顺序，则按字母顺序排序
+        return sorted(template_categories)
 
     def _export_uncategorized(self, channels: List[Channel]) -> int:
         """
@@ -320,7 +349,7 @@ class ResultExporter:
                 ipv6.append(chan)
             elif ipv4_pat.search(chan.url):
                 ipv4.append(chan)
-            elif self.config.get('MAIN', 'domain_handling', fallback='ipv4') == 'ipv6':
+            elif self.config.get('MAIN', 'prefer_ip_version', fallback='ipv4') == 'ipv6':
                 ipv6.append(chan)
             else:
                 ipv4.append(chan)

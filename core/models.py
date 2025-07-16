@@ -31,16 +31,3 @@ class Channel:
         self.tvg_id = self.tvg_id or self.name
         self.group_title = self.group_title or self.category
         self.original_category = self.original_category or self.category
-
-    def clean_url(self) -> str:
-        """实例级别的URL清理"""
-        if not self.url:
-            return self.url
-            
-        # 1. 去除$符号及其后的所有内容
-        clean_url = re.sub(r'\$.*$', '', self.url)
-        
-        # 2. 移除参数和锚点
-        clean_url = clean_url.split('?')[0].split('#')[0]
-        
-        return clean_url.strip()

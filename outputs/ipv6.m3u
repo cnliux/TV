@@ -1,16 +1,7 @@
 #EXTM3U
 #EXT-X-EPGURL:http://epg.51zmt.top:8000/cc.xml.gz
-#EXTINF:-1 tvg-id="贵州卫视" tvg-name="贵州卫视" tvg-logo="https://epg.v1.mk/logo/贵州卫视.png" group-title="未分类",贵州卫视
-http://1b6467f415.iok.la:9931/tsfile/live/1071_1.m3u8
-#EXTINF:-1 tvg-id="人间卫视" tvg-name="人间卫视" tvg-logo="https://epg.v1.mk/logo/人间卫视.png" group-title="未分类",人间卫视
-https://5ddce30eb4b55.streamlock.net/bltvhd/bltv1/chunklist_w511254805.m3u8
-#EXTINF:-1 tvg-id="TVBS亚洲" tvg-name="TVBS亚洲" tvg-logo="https://epg.v1.mk/logo/TVBS亚洲.png" group-title="未分类",TVBS亚洲
-http://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8
-#EXTINF:-1 tvg-id="ชอง BALLY SPORTS MIDWEST" tvg-name="ชอง BALLY SPORTS MIDWEST" tvg-logo="https://epg.v1.mk/logo/ชอง BALLY SPORTS MIDWEST.png" group-title="未分类",ชอง BALLY SPORTS MIDWEST
-http://38b891c9.rossteleccom.net/iptv/UAWZS54EW64RZB/19153/index.m3u8
-#EXTINF:-1 tvg-id="ชอง CBS SPORTS NETWORK" tvg-name="ชอง CBS SPORTS NETWORK" tvg-logo="https://epg.v1.mk/logo/ชอง CBS SPORTS NETWORK.png" group-title="未分类",ชอง CBS SPORTS NETWORK
-http://38b891c9.rossteleccom.net/iptv/UAWZS54EW64RZB/7324/index.m3u8
-#EXTINF:-1 tvg-id="ชอง CBS SPORTS NETWORK" tvg-name="ชอง CBS SPORTS NETWORK" tvg-logo="https://epg.v1.mk/logo/ชอง CBS SPORTS NETWORK.png" group-title="未分类",ชอง CBS SPORTS NETWORK
-http://0f3f161d.cbilant.com/iptv/DNKSGWXK47B9GH/7324/index.m3u8
-#EXTINF:-1 tvg-id="成龙金喜善_美丽的神话" tvg-name="成龙金喜善_美丽的神话" tvg-logo="https://epg.v1.mk/logo/成龙金喜善_美丽的神话.png" group-title="未分类",成龙金喜善_美丽的神话
-https://15799848.s21v.faiusr.com/58/ABUIABA6GAAg_tma4gUowLvk9wM.mp4
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXT-X-VERSION:3
+
+
+# 总计: 0 个频道

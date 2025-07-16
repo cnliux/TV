@@ -1,14 +1,6 @@
-卫视频道,#genre#
-贵州卫视,http://1b6467f415.iok.la:9931/tsfile/live/1071_1.m3u8
-人间卫视,https://5ddce30eb4b55.streamlock.net/bltvhd/bltv1/chunklist_w511254805.m3u8
-贵州卫视,http://1b6467f415.iok.la:9931/tsfile/live/1071_1.m3u8
+# 电视频道列表
+# 生成时间: 2025-07-16 08:41:06
+# 总计频道: 0 个
 
-港·澳·台,#genre#
-TVBS亚洲,http://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8
-ชอง BALLY SPORTS MIDWEST,http://38b891c9.rossteleccom.net/iptv/UAWZS54EW64RZB/19153/index.m3u8
-ชอง CBS SPORTS NETWORK,http://38b891c9.rossteleccom.net/iptv/UAWZS54EW64RZB/7324/index.m3u8
-ชอง CBS SPORTS NETWORK,http://0f3f161d.cbilant.com/iptv/DNKSGWXK47B9GH/7324/index.m3u8
 
-🏛经典剧场,#genre#
-成龙金喜善_美丽的神话,https://15799848.s21v.faiusr.com/58/ABUIABA6GAAg_tma4gUowLvk9wM.mp4
-
+# 实际导出: 0 个有效频道

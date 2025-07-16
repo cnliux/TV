@@ -3,7 +3,7 @@ import os
 import asyncio
 import configparser
 from pathlib import Path
-from typing import List, Set, Dict, Optional
+from typing import List, Set, Dict, Callable, Optional
 import re
 import logging
 import sys
@@ -160,7 +160,7 @@ async def preprocess_channels(
     valid_channels = []
     seen_urls = set()
     seen_names = set()
-    progress = SmartProgress(len(channels), "🛠️ 预处理")
+    progress = SmartProgress(len(channels), "🛠🛠🛠️ 预处理")
     
     for i in range(0, len(channels), batch_size):
         batch = channels[i:i + batch_size]
@@ -195,29 +195,50 @@ async def fetch_channels(config: configparser.ConfigParser) -> List[Channel]:
     )
     
     # 获取数据
-    progress = SmartProgress(len(urls), "🌐 获取源数据")
+    progress = SmartProgress(len(urls), "🌐🌐 获取源数据")
     contents = await fetcher.fetch_all(urls, progress.update)
     progress.close()
     
     # 解析内容
     parser = PlaylistParser(config)
     channels = []
-    parse_progress = SmartProgress(len(contents), "🔍 解析频道")
+    parse_progress = SmartProgress(len(contents), "🔍🔍 解析频道")
     
     for content in contents:
-        if content:
-            channels.extend(list(parser.parse(content)))
+        if content and content.content:
+            channels.extend(list(parser.parse(content.content)))
         parse_progress.update()
     parse_progress.close()
     
     await fetcher.close()
     return channels
 
+def handle_loop_exception(loop, context):
+    """处理事件循环异常"""
+    if 'exception' in context:
+        exc = context['exception']
+        # 忽略 Windows 特定的关闭错误
+        if sys.platform == 'win32' and isinstance(exc, OSError):
+            if exc.winerror == 995:  # 操作已中止
+                logger.debug("忽略 Windows 连接关闭错误")
+                return
+    # 其他异常使用默认处理
+    loop.default_exception_handler(context)
+
 async def main():
     try:
         # Windows编码设置
         if os.name == 'nt':
             os.system('chcp 65001 > nul')
+        
+        # 事件循环设置
+        if sys.platform == 'win32':
+            loop = asyncio.ProactorEventLoop()
+            asyncio.set_event_loop(loop)
+            loop.set_exception_handler(handle_loop_exception)
+        else:
+            loop = asyncio.get_event_loop()
+            loop.set_exception_handler(handle_loop_exception)
         
         # 初始化
         config = load_config()
@@ -244,7 +265,7 @@ async def main():
         matcher = AutoCategoryMatcher(
             config.get('PATHS', 'templates_path', fallback='config/templates.txt')
         )
-        classify_progress = SmartProgress(len(valid_channels), "🏷️ 分类")
+        classify_progress = SmartProgress(len(valid_channels), "🏷🏷️ 分类")
         for chan in valid_channels:
             chan.category = matcher.match(chan)
             classify_progress.update()
@@ -261,35 +282,42 @@ async def main():
             failed_urls_path=config.get('TESTER', 'failed_urls_path', fallback='config/failed_urls.txt')
         )
         failed_urls = set()
-        speed_progress = SmartProgress(len(categorized_channels), "⏱️ 测速")
+        speed_progress = SmartProgress(len(categorized_channels), "⏱⏱⏱️ 测速")
         await tester.test_channels(categorized_channels, speed_progress.update, failed_urls, whitelist)
         speed_progress.close()
         
         # 导出
         exporter = ResultExporter(
             output_dir=config.get('MAIN', 'output_dir', fallback='outputs'),
-            enable_history=config.getboolean('EXPORTER', 'enable_history', fallback=False),
+            enable_history=False,  # 此参数已被移除
             template_path=config.get('PATHS', 'templates_path', fallback='config/templates.txt'),
             config=config,
             matcher=matcher
         )
-        exporter.export(valid_channels, lambda: None)
+        
+        # 使用配置中的 include_uncategorized 参数
+        include_uncat = config.getboolean('EXPORTER', 'include_uncategorized', fallback=False)
+        exporter.export(valid_channels, lambda: None, include_uncat=include_uncat)
         
         # 统计
         online = sum(1 for c in valid_channels if c.status == 'online')
         uncategorized = sum(1 for c in valid_channels if c.category == "未分类")
         logger.info(f"\n{'='*50}")
         logger.info(f"✅ 任务完成! 总计: {len(valid_channels)} 个频道")
-        logger.info(f"🟢 在线: {online} | 🔴 离线: {len(valid_channels)-online}")
-        logger.info(f"📦 未分类: {uncategorized}")
-        logger.info(f"💾 失败URL保存到: {tester.failed_urls_path}")
-        logger.info(f"📝 未分类频道保存到: {exporter.uncategorized_path}")
+        logger.info(f"🟢🟢🟢 在线: {online} | 🔴🔴 离线: {len(valid_channels)-online}")
+        logger.info(f"📦📦 未分类: {uncategorized}")
+        logger.info(f"💾💾 失败URL保存到: {tester.failed_urls_path}")
+        logger.info(f"📝📝 未分类频道保存到: {exporter.uncategorized_path}")
         logger.info("⚠️ 免责声明: 以上频道信息仅供参考，使用时请自行验证其合法性和可用性")
         logger.info("="*50)
 
     except Exception as e:
-        logger.error(f"❌ 主流程异常: {str(e)}", exc_info=True)
+        logger.error(f"❌❌ 主流程异常: {str(e)}", exc_info=True)
         raise
+    finally:
+        # 关闭事件循环
+        if sys.platform == 'win32' and 'loop' in locals():
+            loop.close()
 
 if __name__ == "__main__":
     asyncio.run(main())

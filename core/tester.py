@@ -1,193 +1,150 @@
-#!/usr/bin/env python3
-import asyncio
-import aiohttp
-from typing import List, Callable, Set
-from .models import Channel
+# core/progress.py
+
+import time
+import math
 import logging
-import re
-from pathlib import Path
-from datetime import datetime  # 添加这行导入
+from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
-class SpeedTester:
-    """测速模块"""
-
-    def __init__(self, timeout: float, concurrency: int, max_attempts: int, 
-                 min_download_speed: float, enable_logging: bool = True,
-                 failed_urls_path: str = 'config/failed_urls.txt'):
-        """
-        初始化测速模块
-        :param timeout: 测速超时时间（秒）
-        :param concurrency: 并发测速数
-        :param max_attempts: 最大尝试次数
-        :param min_download_speed: 最小下载速度（KB/s）
-        :param enable_logging: 是否启用日志输出
-        :param failed_urls_path: 测速失败URL保存路径
-        """
-        self.timeout = timeout
-        self.semaphore = asyncio.Semaphore(concurrency)
-        self.max_attempts = max_attempts
-        self.min_download_speed = min_download_speed
-        self.enable_logging = enable_logging
-        self.failed_urls_path = Path(failed_urls_path)
-        self.logger = logging.getLogger(__name__)
-
-    def is_in_white_list(self, channel: Channel, white_list: set) -> bool:
-        """判断频道是否在白名单中"""
-        normalized_name = re.sub(r'[^\w\s]', '', channel.name).strip().lower()
-        normalized_url = channel.url.lower()
+class SmartProgress:
+    """智能进度系统（动态更新频率+精准时间预估）"""
+    
+    def __init__(self, total: int, desc: str = "Processing", min_update_interval: float = 0.5):
+        self.total = total
+        self.desc = desc
+        self.min_update_interval = min_update_interval
+        self.start_time = time.time()
+        self.last_update_time = self.start_time
+        self.current = 0
+        self.completed = 0
         
-        for entry in white_list:
-            norm_entry = re.sub(r'[^\w\s]', '', entry).strip().lower()
-            if (norm_entry in normalized_url or 
-                norm_entry == normalized_url or 
-                norm_entry == normalized_name):
-                return True
-        return False
-
-    async def test_channels(self, channels: List[Channel], progress_cb: Callable, 
-                          failed_urls: Set[str], white_list: set):
-        """
-        批量测速并保存失败URL
-        :param channels: 频道列表
-        :param progress_cb: 进度回调函数
-        :param failed_urls: 用于记录测速失败的URL
-        :param white_list: 白名单列表
-        """
-        try:
-            async with aiohttp.ClientSession() as session:
-                tasks = [self._test(session, c, progress_cb, failed_urls, white_list) 
-                        for c in channels]
-                await asyncio.gather(*tasks)
-        finally:
-            # 确保保存失败URL
-            if failed_urls:
-                self._save_failed_urls(failed_urls)
-
-    def _save_failed_urls(self, failed_urls: Set[str]):
-        """保存测速失败的URL"""
-        try:
-            # 确保目录存在
-            self.failed_urls_path.parent.mkdir(parents=True, exist_ok=True)
+        # 动态计算初始更新频率
+        self.update_interval = self._calculate_initial_interval()
+        
+        # 历史记录用于预测
+        self.history = []
+        self.max_history_size = 10
+        
+    def _calculate_initial_interval(self) -> int:
+        """根据总量计算初始更新频率"""
+        if self.total <= 1000:
+            return 10
+        elif self.total <= 10000:
+            return 100
+        elif self.total <= 100000:
+            return 500
+        else:
+            return max(1000, self.total // 100)
+    
+    def update(self, n: int = 1):
+        """更新进度"""
+        self.current += n
+        self.completed += n
+        
+        # 检查是否需要更新显示
+        current_time = time.time()
+        if (current_time - self.last_update_time) >= self.min_update_interval:
+            self._update_display()
+            self.last_update_time = current_time
             
-            with open(self.failed_urls_path, 'w', encoding='utf-8') as f:
-                f.write("# 测速失败的URL列表\n")
-                f.write(f"# 生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-                f.write("\n".join(sorted(failed_urls)))
-                f.write(f"\n\n# 总计: {len(failed_urls)} 个失败URL\n")
+            # 自适应调整更新频率
+            self._adjust_update_interval()
+    
+    def _update_display(self):
+        """更新进度显示"""
+        elapsed = time.time() - self.start_time
+        
+        # 智能时间格式转换
+        elapsed_str = self._format_time(elapsed)
+        
+        # 计算剩余时间
+        if self.current > 0:
+            # 使用EMA平滑处理速度变化
+            current_speed = self.current / elapsed
+            self.history.append(current_speed)
+            if len(self.history) > self.max_history_size:
+                self.history.pop(0)
+                
+            # 计算加权平均速度
+            avg_speed = self._weighted_average_speed()
             
-            self.logger.info(f"已保存 {len(failed_urls)} 个失败URL到 {self.failed_urls_path}")
-        except Exception as e:
-            self.logger.error(f"保存失败URL失败: {str(e)}", exc_info=True)
-
-    async def _test(self, session: aiohttp.ClientSession, channel: Channel, 
-                  progress_cb: Callable, failed_urls: Set[str], white_list: set):
-        """
-        测试单个频道
-        :param session: aiohttp会话
-        :param channel: 频道对象
-        :param progress_cb: 进度回调函数
-        :param failed_urls: 用于记录测速失败的URL
-        :param white_list: 白名单列表
-        """
-        if self.is_in_white_list(channel, white_list):
-            channel.status = 'online'
-            progress_cb()
-            return
-
-        async with self.semaphore:
-            for attempt in range(self.max_attempts):
-                try:
-                    headers = {'User-Agent': 'Mozilla/5.0'}
-                    start = asyncio.get_event_loop().time()
-
-                    # 发起请求
-                    async with session.get(channel.url, headers=headers, 
-                                         timeout=self.timeout) as resp:
-                        # 检查响应状态码
-                        if resp.status != 200:
-                            if self.enable_logging:
-                                self.logger.warning(
-                                    f"⚠️ 测速失败 (尝试 {attempt + 1}/{self.max_attempts}): "
-                                    f"{channel.name} ({channel.url}), 状态码: {resp.status}"
-                                )
-                            if attempt == self.max_attempts - 1:
-                                channel.status = 'offline'
-                                failed_urls.add(channel.url)
-                            continue
-
-                        # 检查响应体是否为空
-                        content_length = int(resp.headers.get('Content-Length', 0))
-                        if content_length <= 0:
-                            if self.enable_logging:
-                                self.logger.warning(
-                                    f"⚠️ 测速失败 (尝试 {attempt + 1}/{self.max_attempts}): "
-                                    f"{channel.name} ({channel.url}), 响应体为空"
-                                )
-                            if attempt == self.max_attempts - 1:
-                                channel.status = 'offline'
-                                failed_urls.add(channel.url)
-                            continue
-
-                        # 计算下载速度
-                        download_time = asyncio.get_event_loop().time() - start
-                        download_speed = (content_length / 1024) / download_time
-                        channel.response_time = download_time
-                        channel.download_speed = download_speed
-
-                        if self.enable_logging:
-                            if download_speed < self.min_download_speed:
-                                self.logger.warning(
-                                    f"⚠️ 测速失败 (尝试 {attempt + 1}/{self.max_attempts}): "
-                                    f"{channel.name} ({channel.url}), "
-                                    f"下载速度: {download_speed:.2f} KB/s "
-                                    f"(低于 {self.min_download_speed:.2f} KB/s)"
-                                )
-                            else:
-                                self.logger.info(
-                                    f"✅ 测速成功: {channel.name} ({channel.url}), "
-                                    f"下载速度: {download_speed:.2f} KB/s"
-                                )
-
-                        if download_speed < self.min_download_speed:
-                            channel.status = 'offline'
-                            if attempt == self.max_attempts - 1:
-                                failed_urls.add(channel.url)
-                        else:
-                            channel.status = 'online'
-                            break
-
-                except aiohttp.ClientError as e:
-                    if self.enable_logging:
-                        self.logger.error(
-                            f"❌ 网络错误 (尝试 {attempt+1}/{self.max_attempts}): "
-                            f"{channel.name} ({channel.url}), 错误: {str(e)}"
-                        )
-                    if attempt == self.max_attempts - 1:
-                        channel.status = 'offline'
-                        failed_urls.add(channel.url)
-                except asyncio.TimeoutError:
-                    if self.enable_logging:
-                        self.logger.error(
-                            f"❌ 测速超时 (尝试 {attempt+1}/{self.max_attempts}): "
-                            f"{channel.name} ({channel.url})"
-                        )
-                    if attempt == self.max_attempts - 1:
-                        channel.status = 'offline'
-                        failed_urls.add(channel.url)
-                except Exception as e:
-                    if self.enable_logging:
-                        self.logger.error(
-                            f"❌ 未知错误 (尝试 {attempt+1}/{self.max_attempts}): "
-                            f"{channel.name} ({channel.url}), 错误: {str(e)}"
-                        )
-                    if attempt == self.max_attempts - 1:
-                        channel.status = 'offline'
-                        failed_urls.add(channel.url)
-
-                # 每次尝试后等待1秒
-                await asyncio.sleep(1)
-
-        # 更新进度条
-        progress_cb()
+            # 计算预估剩余时间
+            remaining_items = self.total - self.completed
+            if avg_speed > 0:
+                remaining_time = remaining_items / avg_speed
+                remaining_str = self._format_time(remaining_time)
+            else:
+                remaining_str = "计算中..."
+        else:
+            remaining_str = "计算中..."
+            
+        # 进度百分比
+        percent = (self.completed / self.total) * 100 if self.total > 0 else 100
+        
+        # 进度条显示
+        bar_length = 30
+        filled_length = int(bar_length * self.completed // self.total)
+        bar = '■' * filled_length + '□' * (bar_length - filled_length)
+        
+        # 状态信息
+        status = f"\r{self.desc} {bar} {percent:.1f}% | 用时: {elapsed_str} | 预计剩余: {remaining_str}"
+        print(status, end='', flush=True)
+        
+        # 完成时添加换行
+        if self.completed >= self.total:
+            print()
+    
+    def _weighted_average_speed(self) -> float:
+        """计算加权平均速度（近期速度权重更高）"""
+        if not self.history:
+            return 0
+        
+        total = 0
+        weights = 0
+        for i, speed in enumerate(reversed(self.history)):
+            weight = 2 ** i  # 指数权重
+            total += speed * weight
+            weights += weight
+            
+        return total / weights
+    
+    def _adjust_update_interval(self):
+        """动态调整更新频率"""
+        # 基于当前速度和剩余项目计算
+        if self.history:
+            current_speed = self.history[-1]
+            if current_speed > 0:
+                items_per_second = current_speed
+                # 目标: 每秒更新1-2次
+                ideal_interval = min(1.0, 0.5 / items_per_second) if items_per_second > 0 else 1.0
+                
+                # 平滑过渡
+                self.update_interval = max(1, min(
+                    self.update_interval * 0.7 + ideal_interval * 0.3,
+                    self.total // 10  # 上限
+                ))
+    
+    def _format_time(self, seconds: float) -> str:
+        """智能时间格式转换"""
+        if seconds < 60:
+            return f"{seconds:.1f}秒"
+        elif seconds < 3600:
+            minutes = seconds / 60
+            return f"{minutes:.1f}分钟"
+        else:
+            hours = seconds / 3600
+            return f"{hours:.1f}小时"
+    
+    def complete(self):
+        """完成进度显示"""
+        if self.completed < self.total:
+            self.current = self.total
+            self.completed = self.total
+            self._update_display()
+        else:
+            self._update_display()
+            
+        # 记录最终用时
+        elapsed = time.time() - self.start_time
+        logger.info(f"{self.desc} 完成! 用时: {self._format_time(elapsed)}")

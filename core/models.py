@@ -1,33 +1,29 @@
-#!/usr/bin/env python3
-from dataclasses import dataclass
-from typing import Optional
 import re
+from dataclasses import dataclass
+from typing import ClassVar
 
 @dataclass
 class Channel:
-    """频道数据模型（完整版）"""
+    """频道数据模型（简化版，移除__slots__以避免冲突）"""
     name: str
     url: str
     category: str = "未分类"
-    original_category: str = ""
-    source_category: str = ""  # 永久保存最原始的分类
     status: str = "pending"
     response_time: float = 0.0
     download_speed: float = 0.0
-    tvg_id: Optional[str] = None
-    tvg_name: Optional[str] = None
-    tvg_logo: Optional[str] = None
-    group_title: Optional[str] = None
-    added_index: int = 0
 
-    def __post_init__(self):
-        """初始化后处理"""
-        # 永久保存最原始的分类（第一次设置后不再修改）
-        if not self.source_category and self.original_category:
-            self.source_category = self.original_category
-        
-        # 设置默认值
-        self.tvg_name = self.tvg_name or self.name
-        self.tvg_id = self.tvg_id or self.name
-        self.group_title = self.group_title or self.category
-        self.original_category = self.original_category or self.category
+    # 类变量（使用ClassVar明确标记，避免与实例属性冲突）
+    IPV4_PATTERN: ClassVar[re.Pattern] = re.compile(r'https?://(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-zA-Z0-9.-]+)(?::\d+)?')
+    IPV6_PATTERN: ClassVar[re.Pattern] = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[\w:]+:[a-fA-F0-9:]+)')
+    RTP_PATTERN: ClassVar[re.Pattern] = re.compile(r'^rtp://', re.IGNORECASE)
+
+    @classmethod
+    def classify_ip_type(cls, url: str) -> str:
+        """分类IP类型: ipv4, ipv6, rtp 或 other"""
+        if cls.RTP_PATTERN.match(url):
+            return "rtp"
+        if cls.IPV6_PATTERN.search(url):
+            return "ipv6"
+        if cls.IPV4_PATTERN.search(url):
+            return "ipv4"
+        return "other"

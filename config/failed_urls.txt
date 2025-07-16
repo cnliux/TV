@@ -1,7 +1,6 @@
 # 测速失败的URL列表
-# 生成时间: 2025-07-16 08:41:06
+# 生成时间: 2025-07-16 14:00:17
 
-http://106.118.70.231:9901/tsfile/live/1013_1.m3u8
 http://111.22.153.159:35455/itv/5000000011000031207.m3u8
 http://113.62.253.22/live.aishang.ctlcdn.com/00000110240389_1/playlist.m3u8
 http://115.153.254.81/PLTV/88888888/224/3221225615/iptv7998.smil/index.m3u8
@@ -116,6 +115,7 @@ http://27.19.85.84:8000/mgtv/651632648.m3u8
 http://27.19.85.84:8000/nptv/cctv4k.m3u8
 http://27.19.85.84:8000/nptv/cctv8k.m3u8
 http://27.19.85.84:8000/nptv/shenzheng.m3u8
+http://36.105.100.208:35455/itv/1000000002000010063.m3u8
 http://36.105.100.208:35455/itv/1000000004000019624.m3u8
 http://36.105.100.208:35455/itv/5000000004000010282.m3u8
 http://36.105.100.208:35455/itv/5000000011000031113.m3u8
@@ -133,12 +133,6 @@ http://39.134.64.87:6610/PLTV/88888888/224/3221225715/index.m3u8
 http://39.134.64.87:6610/PLTV/88888888/224/3221225741/index.m3u8
 http://39.134.64.87:6610/PLTV/88888888/224/3221225742/index.m3u8
 http://39.134.64.87:6610/PLTV/88888888/224/3221226505/index.m3u8
-http://39.164.180.36:19901/tsfile/live/0006_1.m3u8
-http://39.164.180.36:19901/tsfile/live/0008_1.m3u8
-http://39.164.180.36:19901/tsfile/live/0009_1.m3u8
-http://39.164.180.36:19901/tsfile/live/0010_1.m3u8
-http://39.164.180.36:19901/tsfile/live/0011_1.m3u8
-http://39.164.180.36:19901/tsfile/live/0012_1.m3u8
 http://50.7.234.10:8278/momo1_twn/playlist.m3u8
 http://61.157.139.15:9901/tsfile/live/0130_1.m3u8
 http://61.157.139.15:9901/tsfile/live/2373_1.m3u8
@@ -232,9 +226,9 @@ http://aldirect.corp-hls.huya.com/src/1448738174-1448738174-6222283077796757504-
 http://cdn.1678520.xyz/tvb/
 http://cdn.jdshipin.com:8880/huya.php
 http://cdn3.1678520.xyz/live/
-http://cfss.cc/cdn/hy/11336592.m3u8
 http://cqshushu.us.kg:2086/ln.php
 http://gslbservzqhsw.itv.cmvideo.cn/index.m3u8
+http://home.kuaidi521.com:35455/douyu/3379942
 http://home.wwang.pw:35455/itv/1000000005000265010.m3u8
 http://home.wwang.pw:35455/itv/1000000005000265016.m3u8
 http://jxcbn.ws-cdn.gitv.tv/hls/XDKT/index.m3u8
@@ -304,6 +298,7 @@ http://yc.myds.me:35455/itv/6000000006000050630.m3u8
 http://yc.myds.me:35455/itv/6000000006000270630.m3u8
 http://zzy789.xyz/bili.php
 https://cdn9.163189.xyz/smt3.1.1.php
+https://event.pull.hebtv.com/jishi/cp2.m3u8
 https://hsplay-360.v.btime.com/live_btime/btv_sn_20170706_s3/index.m3u8
 https://live.lalifeier.eu.org/gzstv/fm916.m3u8
 https://live.lalifeier.eu.org/gzstv/fm946.m3u8
@@ -313,19 +308,31 @@ https://live.lalifeier.eu.org/youtube/5_NHwTULasE.m3u8
 https://live.lalifeier.eu.org/youtube/6HodCcEW_oQ.m3u8
 https://live.lalifeier.eu.org/youtube/bEZYrBMYNNg.m3u8
 https://live.lalifeier.eu.org/youtube/uDqQo8a7Xmk.m3u8
+https://live.metshop.top/yy/1354806550
+https://live.metshop.top/yy/1382660835
+https://live.metshop.top/yy/1382704651
+https://ngcdn001.cnr.cn/live/dszs/index.m3u8
+https://ngcdn001.cnr.cn/live/hygb/index.m3u8
 https://p26-sign.douyinpic.com/obj//tos-cn-v-0000c2367/e78ed75c7aa14cbd867980911e6823b4
 https://p26-sign.douyinpic.com/obj/tos-cn-v-0000c2367/1c03129b2d624023b73ea05806923742
 https://p26-sign.douyinpic.com/obj/tos-cn-v-0000c2367/d56a84c47e784df79acbcd72b99930cf
 https://tv.cry33.com/ys4k.php
+https://ukzy.ukubf4.com/20220404/gfSdtuvX/index.m3u8
 https://ukzy.ukubf4.com/20220407/jEakalqL/index.m3u8
 https://v.06dn.com/api/v3/slave/source/0/L3VwbG9hZHMvMTc5MjUvMjAyMzEyLzMxLzE3OTI1XzdaZEZMdzh2X-ayp-a1t-S4gOWjsOeskeWCsuaxn-a5li5tcDQ/%E6%B2%A7%E6%B5%B7%E4%B8%80%E5%A3%B0%E7%AC%91%E5%82%B2%E6%B1%9F%E6%B9%96.mp4
+https://v.cdnlz19.com/20240715/39553_5465951c/index.m3u8
+https://v.cdnlz21.com/20240616/444_44113860/index.m3u8
 https://v.cdnlz21.com/20240709/840_04e7e49c/index.m3u8
 https://v1.cdnlz1.com/20230915/22106_ecd3e963/index.m3u8
 https://v1.cdnlz1.com/20231109/23505_05017126/index.m3u8
-https://vip1.lz-cdn1.com/20220404/847_6b018411/index.m3u8
-https://vip1.lz-cdn1.com/20220411/1677_052c52a4/index.m3u8
 https://vip1.lz-cdn1.com/20230527/21048_9f507eb4/index.m3u8
 https://vip1.lz-cdn1.com/20230808/21693_d666303c/index.m3u8
+https://vip1.lz-cdn1.com/20230808/21699_2413bbe5/index.m3u8
+https://vip1.lz-cdn8.com/20220929/28002_4ef69f70/index.m3u8
+https://www.goodiptv.club/huya/30806401
+https://www.goodiptv.club/yy/1355076627
+https://www.goodiptv.club/yy/1382736809
+https://www.goodiptv.club/yy/1394000563
 https://yszy.wappt.top/api/
 
-# 总计: 326 个失败URL
+# 总计: 333 个失败URL

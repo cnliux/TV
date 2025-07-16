@@ -3,7 +3,7 @@ import os
 import asyncio
 import configparser
 from pathlib import Path
-from typing import List, Set, Dict, Callable, Optional
+from typing import List, Set, Dict, Optional
 import re
 import logging
 import sys
@@ -205,40 +205,19 @@ async def fetch_channels(config: configparser.ConfigParser) -> List[Channel]:
     parse_progress = SmartProgress(len(contents), "🔍🔍 解析频道")
     
     for content in contents:
-        if content and content.content:
-            channels.extend(list(parser.parse(content.content)))
+        if content:
+            channels.extend(list(parser.parse(content)))
         parse_progress.update()
     parse_progress.close()
     
     await fetcher.close()
     return channels
 
-def handle_loop_exception(loop, context):
-    """处理事件循环异常"""
-    if 'exception' in context:
-        exc = context['exception']
-        # 忽略 Windows 特定的关闭错误
-        if sys.platform == 'win32' and isinstance(exc, OSError):
-            if exc.winerror == 995:  # 操作已中止
-                logger.debug("忽略 Windows 连接关闭错误")
-                return
-    # 其他异常使用默认处理
-    loop.default_exception_handler(context)
-
 async def main():
     try:
         # Windows编码设置
         if os.name == 'nt':
             os.system('chcp 65001 > nul')
-        
-        # 事件循环设置
-        if sys.platform == 'win32':
-            loop = asyncio.ProactorEventLoop()
-            asyncio.set_event_loop(loop)
-            loop.set_exception_handler(handle_loop_exception)
-        else:
-            loop = asyncio.get_event_loop()
-            loop.set_exception_handler(handle_loop_exception)
         
         # 初始化
         config = load_config()
@@ -289,13 +268,13 @@ async def main():
         # 导出
         exporter = ResultExporter(
             output_dir=config.get('MAIN', 'output_dir', fallback='outputs'),
-            enable_history=False,  # 此参数已被移除
+            enable_history=config.getboolean('EXPORTER', 'enable_history', fallback=False),
             template_path=config.get('PATHS', 'templates_path', fallback='config/templates.txt'),
             config=config,
             matcher=matcher
         )
         
-        # 使用配置中的 include_uncategorized 参数
+        # 修复: 使用配置中的 include_uncategorized 参数
         include_uncat = config.getboolean('EXPORTER', 'include_uncategorized', fallback=False)
         exporter.export(valid_channels, lambda: None, include_uncat=include_uncat)
         
@@ -314,10 +293,6 @@ async def main():
     except Exception as e:
         logger.error(f"❌❌ 主流程异常: {str(e)}", exc_info=True)
         raise
-    finally:
-        # 关闭事件循环
-        if sys.platform == 'win32' and 'loop' in locals():
-            loop.close()
 
 if __name__ == "__main__":
     asyncio.run(main())

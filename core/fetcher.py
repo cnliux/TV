@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class SourceFetcher:
     """订阅源获取器（带错误重试和编码处理）"""
     
-    def __init__(self, timeout: float, concurrency: int, retries: int = 3):
+    def __init__(self, timeout: float, concurrency: int, retries: int = 2):
         self.timeout = aiohttp.ClientTimeout(total=timeout)
         self.semaphore = asyncio.Semaphore(concurrency)
         self.retries = retries

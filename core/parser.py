@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import re
 from typing import Generator, Dict, Optional
-from .models import Channel
 import logging
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+from .models import Channel
 
 class PlaylistParser:
     """M3U解析器（完整版）"""

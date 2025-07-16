@@ -10,6 +10,7 @@ class Channel:
     url: str
     category: str = "未分类"
     original_category: str = ""
+    source_category: str = ""  # 永久保存最原始的分类
     status: str = "pending"
     response_time: float = 0.0
     download_speed: float = 0.0
@@ -21,8 +22,9 @@ class Channel:
 
     def __post_init__(self):
         """初始化后处理"""
-        # 清理URL（实例级别二次清理）
-        self.url = self._clean_url(self.url)
+        # 永久保存最原始的分类（第一次设置后不再修改）
+        if not self.source_category and self.original_category:
+            self.source_category = self.original_category
         
         # 设置默认值
         self.tvg_name = self.tvg_name or self.name
@@ -30,13 +32,13 @@ class Channel:
         self.group_title = self.group_title or self.category
         self.original_category = self.original_category or self.category
 
-    def _clean_url(self, url: str) -> str:
+    def clean_url(self) -> str:
         """实例级别的URL清理"""
-        if not url:
-            return url
+        if not self.url:
+            return self.url
             
         # 1. 去除$符号及其后的所有内容
-        clean_url = re.sub(r'\$.*$', '', url)
+        clean_url = re.sub(r'\$.*$', '', self.url)
         
         # 2. 移除参数和锚点
         clean_url = clean_url.split('?')[0].split('#')[0]

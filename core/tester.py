@@ -1,150 +1,155 @@
-# core/progress.py
-
-import time
-import math
+#!/usr/bin/env python3
+# 添加 shebang（可选，非必须）
+import asyncio
+import aiohttp
+from typing import List, Callable, Set
+from .models import Channel
 import logging
-from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
-class SmartProgress:
-    """智能进度系统（动态更新频率+精准时间预估）"""
-    
-    def __init__(self, total: int, desc: str = "Processing", min_update_interval: float = 0.5):
-        self.total = total
-        self.desc = desc
-        self.min_update_interval = min_update_interval
-        self.start_time = time.time()
-        self.last_update_time = self.start_time
-        self.current = 0
-        self.completed = 0
-        
-        # 动态计算初始更新频率
-        self.update_interval = self._calculate_initial_interval()
-        
-        # 历史记录用于预测
-        self.history = []
-        self.max_history_size = 10
-        
-    def _calculate_initial_interval(self) -> int:
-        """根据总量计算初始更新频率"""
-        if self.total <= 1000:
-            return 10
-        elif self.total <= 10000:
-            return 100
-        elif self.total <= 100000:
-            return 500
-        else:
-            return max(1000, self.total // 100)
-    
-    def update(self, n: int = 1):
-        """更新进度"""
-        self.current += n
-        self.completed += n
-        
-        # 检查是否需要更新显示
-        current_time = time.time()
-        if (current_time - self.last_update_time) >= self.min_update_interval:
-            self._update_display()
-            self.last_update_time = current_time
+import asyncio
+import aiohttp
+from typing import List, Callable, Set
+from .models import Channel
+import logging
+import time
+
+logger = logging.getLogger(__name__)
+
+class SpeedTester:  # 确保类名完全匹配
+    def __init__(self, timeout: float, concurrency: int, max_attempts: int,
+                 min_download_speed: float, enable_logging: bool = True):
+        self.timeout = timeout
+        self.semaphore = asyncio.Semaphore(concurrency)
+        self.max_attempts = max_attempts
+        self.min_download_speed = min_download_speed
+        self.enable_logging = enable_logging
+
+    async def test_channels(self, channels: List[Channel], progress_cb: Callable,
+                          failed_urls: Set[str], white_list: set):
+        """批量测速方法"""
+        async with aiohttp.ClientSession() as session:
+            tasks = [self._test_channel(session, c, progress_cb, failed_urls, white_list) 
+                    for c in channels]
+            await asyncio.gather(*tasks)
+
+    async def test_channels(self, channels: List[Channel], progress_cb: Callable, 
+                           failed_urls: Set[str], white_list: set):
+        """批量测速（带动态并发调整）"""
+        self.total_count = len(channels)
+        async with aiohttp.ClientSession() as session:
+            tasks = [self._test_channel(session, c, progress_cb, failed_urls, white_list) for c in channels]
+            await asyncio.gather(*tasks)
+
+    async def _test_channel(self, session: aiohttp.ClientSession, channel: Channel, 
+                           progress_cb: Callable, failed_urls: Set[str], white_list: set):
+        """测试单个频道（带自适应重试）"""
+        if self._is_in_white_list(channel, white_list):
+            channel.status = 'online'
+            progress_cb()
+            return
+
+        async with self.semaphore:
+            delay = 1  # 初始延迟
+            for attempt in range(self.max_attempts):
+                try:
+                    start_time = time.time()
+                    success = await self._perform_test(session, channel)
+                    test_duration = time.time() - start_time
+                    
+                    if success:
+                        self.success_count += 1
+                        break
+                    else:
+                        # 根据测试时长调整延迟
+                        delay = max(1, min(10, test_duration * 2))
+                except Exception as e:
+                    logger.debug(f"测速异常: {channel.url} - {str(e)}")
+                finally:
+                    # 动态调整并发
+                    if attempt < self.max_attempts - 1:
+                        await asyncio.sleep(delay)
             
-            # 自适应调整更新频率
-            self._adjust_update_interval()
-    
-    def _update_display(self):
-        """更新进度显示"""
-        elapsed = time.time() - self.start_time
-        
-        # 智能时间格式转换
-        elapsed_str = self._format_time(elapsed)
-        
-        # 计算剩余时间
-        if self.current > 0:
-            # 使用EMA平滑处理速度变化
-            current_speed = self.current / elapsed
-            self.history.append(current_speed)
-            if len(self.history) > self.max_history_size:
-                self.history.pop(0)
+            # 更新进度
+            progress_cb()
+            
+            # 每100个频道调整一次并发
+            if self.total_count > 0 and (self.success_count + len(failed_urls)) % 100 == 0:
+                await self._adjust_concurrency()
+
+    async def _perform_test(self, session: aiohttp.ClientSession, channel: Channel) -> bool:
+        """执行单次测速"""
+        try:
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            start = time.time()
+            
+            async with session.get(channel.url, headers=headers, timeout=self.timeout) as resp:
+                if resp.status != 200:
+                    raise Exception(f"HTTP状态码: {resp.status}")
                 
-            # 计算加权平均速度
-            avg_speed = self._weighted_average_speed()
-            
-            # 计算预估剩余时间
-            remaining_items = self.total - self.completed
-            if avg_speed > 0:
-                remaining_time = remaining_items / avg_speed
-                remaining_str = self._format_time(remaining_time)
-            else:
-                remaining_str = "计算中..."
-        else:
-            remaining_str = "计算中..."
-            
-        # 进度百分比
-        percent = (self.completed / self.total) * 100 if self.total > 0 else 100
-        
-        # 进度条显示
-        bar_length = 30
-        filled_length = int(bar_length * self.completed // self.total)
-        bar = '■' * filled_length + '□' * (bar_length - filled_length)
-        
-        # 状态信息
-        status = f"\r{self.desc} {bar} {percent:.1f}% | 用时: {elapsed_str} | 预计剩余: {remaining_str}"
-        print(status, end='', flush=True)
-        
-        # 完成时添加换行
-        if self.completed >= self.total:
-            print()
-    
-    def _weighted_average_speed(self) -> float:
-        """计算加权平均速度（近期速度权重更高）"""
-        if not self.history:
-            return 0
-        
-        total = 0
-        weights = 0
-        for i, speed in enumerate(reversed(self.history)):
-            weight = 2 ** i  # 指数权重
-            total += speed * weight
-            weights += weight
-            
-        return total / weights
-    
-    def _adjust_update_interval(self):
-        """动态调整更新频率"""
-        # 基于当前速度和剩余项目计算
-        if self.history:
-            current_speed = self.history[-1]
-            if current_speed > 0:
-                items_per_second = current_speed
-                # 目标: 每秒更新1-2次
-                ideal_interval = min(1.0, 0.5 / items_per_second) if items_per_second > 0 else 1.0
+                content_length = int(resp.headers.get('Content-Length', 0))
+                if content_length <= 0:
+                    raise Exception("无效内容长度")
                 
-                # 平滑过渡
-                self.update_interval = max(1, min(
-                    self.update_interval * 0.7 + ideal_interval * 0.3,
-                    self.total // 10  # 上限
-                ))
-    
-    def _format_time(self, seconds: float) -> str:
-        """智能时间格式转换"""
-        if seconds < 60:
-            return f"{seconds:.1f}秒"
-        elif seconds < 3600:
-            minutes = seconds / 60
-            return f"{minutes:.1f}分钟"
-        else:
-            hours = seconds / 3600
-            return f"{hours:.1f}小时"
-    
-    def complete(self):
-        """完成进度显示"""
-        if self.completed < self.total:
-            self.current = self.total
-            self.completed = self.total
-            self._update_display()
-        else:
-            self._update_display()
-            
-        # 记录最终用时
-        elapsed = time.time() - self.start_time
-        logger.info(f"{self.desc} 完成! 用时: {self._format_time(elapsed)}")
+                # 简单读取部分数据计算速度
+                chunk_size = 1024 * 10  # 10KB
+                read_bytes = 0
+                async for chunk in resp.content.iter_chunked(chunk_size):
+                    read_bytes += len(chunk)
+                    if read_bytes >= chunk_size * 2:  # 读取20KB后停止
+                        break
+                
+                download_time = time.time() - start
+                download_speed = (read_bytes / 1024) / download_time  # KB/s
+                
+                channel.response_time = download_time
+                channel.download_speed = download_speed
+                
+                if self.enable_logging:
+                    status = "✅" if download_speed >= self.min_download_speed else "⚠️"
+                    logger.info(f"{status} {channel.name} - 速度: {download_speed:.2f} KB/s")
+                
+                if download_speed >= self.min_download_speed:
+                    channel.status = 'online'
+                    return True
+                else:
+                    channel.status = 'offline'
+                    return False
+                    
+        except asyncio.TimeoutError:
+            if self.enable_logging:
+                logger.warning(f"⏱️ 超时: {channel.url}")
+            channel.status = 'offline'
+            return False
+        except Exception as e:
+            if self.enable_logging:
+                logger.warning(f"⚠️ 错误: {channel.url} - {str(e)}")
+            channel.status = 'offline'
+            return False
+
+    async def _adjust_concurrency(self):
+        """动态调整并发数"""
+        success_rate = self.success_count / self.total_count if self.total_count > 0 else 1
+        
+        if success_rate > 0.8 and self.current_concurrency < self.concurrency * 1.5:
+            # 成功率高时增加并发
+            new_concurrency = min(self.concurrency * 2, self.current_concurrency + 2)
+            for _ in range(new_concurrency - self.current_concurrency):
+                self.semaphore.release()
+            self.current_concurrency = new_concurrency
+            logger.info(f"↑ 增加并发至 {new_concurrency} (成功率: {success_rate:.1%})")
+        elif success_rate < 0.6 and self.current_concurrency > 1:
+            # 成功率低时减少并发
+            reduce_by = max(1, self.current_concurrency // 4)
+            new_concurrency = max(1, self.current_concurrency - reduce_by)
+            # 暂时减少并发（通过不释放信号量）
+            self.current_concurrency = new_concurrency
+            logger.info(f"↓ 减少并发至 {new_concurrency} (成功率: {success_rate:.1%})")
+
+    def _is_in_white_list(self, channel: Channel, white_list: set) -> bool:
+        """检查频道是否在白名单中（预处理为小写）"""
+        lower_whitelist = {w.lower() for w in white_list}
+        return (channel.name.lower() in lower_whitelist or 
+                channel.url.lower() in lower_whitelist or
+                any(w in channel.url.lower() for w in lower_whitelist))

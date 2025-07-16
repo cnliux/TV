@@ -48,6 +48,8 @@ http://58.221.214.82:9901/tsfile/live/0007_1.m3u8
 http://39.164.180.36:19901/tsfile/live/0008_1.m3u8
 #EXTINF:-1 tvg-id="CCTV9纪录" tvg-name="CCTV9纪录" tvg-logo="https://epg.v1.mk/logo/CCTV9.png" group-title="央视频道",CCTV9
 http://39.164.180.36:19901/tsfile/live/0009_1.m3u8
+#EXTINF:-1 tvg-id="CCTV杀人案件韩国恐怖片" tvg-name="CCTV杀人案件韩国恐怖片" tvg-logo="https://epg.v1.mk/logo/CCTV.png" group-title="央视频道",CCTV
+https://vip1.lz-cdn1.com/20230527/21048_9f507eb4/index.m3u8
 #EXTINF:-1 tvg-id="CCTV_1_600p_Not_247" tvg-name="CCTV_1_600p_Not_247" tvg-logo="https://epg.v1.mk/logo/CCTV.png" group-title="央视频道",CCTV
 https://cd-live-stream.news.cctvplus.com/live/smil:CHANNEL1.smil/playlist.m3u8
 #EXTINF:-1 tvg-id="CCTV_2_600p_Not_247" tvg-name="CCTV_2_600p_Not_247" tvg-logo="https://epg.v1.mk/logo/CCTV.png" group-title="央视频道",CCTV
@@ -84,14 +86,12 @@ http://124.128.73.58:9901/tsfile/live/0111_1.m3u8
 http://61.138.128.226:19901/tsfile/live/0119_1.m3u8
 #EXTINF:-1 tvg-id="农林卫视" tvg-name="农林卫视" tvg-logo="https://epg.v1.mk/logo/卫视.png" group-title="卫视频道",卫视
 http://112.46.105.20:8009/hls/27/index.m3u8
+#EXTINF:-1 tvg-id="延边卫视" tvg-name="延边卫视" tvg-logo="https://epg.v1.mk/logo/卫视.png" group-title="卫视频道",卫视
+http://l.cztvcloud.com/channels/lantian/SXxinchang2/720p.m3u8
 #EXTINF:-1 tvg-id="莲花卫视" tvg-name="莲花卫视" tvg-logo="https://epg.v1.mk/logo/卫视.png" group-title="卫视频道",卫视
 https://fenghuang.tv12.xyz/187.m3u8
 #EXTINF:-1 tvg-id="人间卫视" tvg-name="人间卫视" tvg-logo="https://epg.v1.mk/logo/卫视.png" group-title="卫视频道",卫视
 http://61.216.67.119:1935/bltvhd/bltv1/chunklist_w1266569526.m3u8
-#EXTINF:-1 tvg-id="旅游卫视" tvg-name="旅游卫视" tvg-logo="https://epg.v1.mk/logo/卫视.png" group-title="卫视频道",卫视
-http://124.128.73.58:9901/tsfile/live/0114_1.m3u8
-#EXTINF:-1 tvg-id="山东教育卫视" tvg-name="山东教育卫视" tvg-logo="https://epg.v1.mk/logo/卫视.png" group-title="卫视频道",卫视
-http://58.57.40.22:9901/tsfile/live/1026_1.m3u8
 #EXTINF:-1 tvg-id="中旺卫视" tvg-name="中旺卫视" tvg-logo="https://epg.v1.mk/logo/卫视.png" group-title="卫视频道",卫视
 http://38.64.72.148:80/hls/modn/list/4010/chunklist0.m3u8
 
@@ -108,8 +108,6 @@ https://turkmedya-live.ercdn.net/tv360/tv360.m3u8
 http://38.64.72.148:80/hls/modn/list/2013/chunklist0.m3u8
 #EXTINF:-1 tvg-id="DW News" tvg-name="DW News" tvg-logo="https://epg.v1.mk/logo/DW.png" group-title="港·澳·台",DW
 https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/stream05/streamPlaylist.m3u8
-#EXTINF:-1 tvg-id="ชอง BALLY SPORTS MIDWEST" tvg-name="ชอง BALLY SPORTS MIDWEST" tvg-logo="https://epg.v1.mk/logo/DW.png" group-title="港·澳·台",DW
-http://38b891c9.rossteleccom.net/iptv/UAWZS54EW64RZB/19153/index.m3u8
 #EXTINF:-1 tvg-id="中視經典綜藝" tvg-name="中視經典綜藝" tvg-logo="https://epg.v1.mk/logo/中視.png" group-title="港·澳·台",中視
 https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV34.m3u8
 #EXTINF:-1 tvg-id="台視新聞台" tvg-name="台視新聞台" tvg-logo="https://epg.v1.mk/logo/台視.png" group-title="港·澳·台",台視
@@ -120,8 +118,6 @@ https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV26.m3u8
 https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV94.m3u8
 #EXTINF:-1 tvg-id="緯來體育" tvg-name="緯來體育" tvg-logo="https://epg.v1.mk/logo/緯來體育.png" group-title="港·澳·台",緯來體育
 http://live4play.uk/livehttpplay
-#EXTINF:-1 tvg-id="ชอง CBS SPORTS NETWORK" tvg-name="ชอง CBS SPORTS NETWORK" tvg-logo="https://epg.v1.mk/logo/CBS SPORTS NETWORK.png" group-title="港·澳·台",CBS SPORTS NETWORK
-http://38b891c9.rossteleccom.net/iptv/UAWZS54EW64RZB/7324/index.m3u8
 #EXTINF:-1 tvg-id="ESPN" tvg-name="ESPN" tvg-logo="https://epg.v1.mk/logo/ESPN.png" group-title="港·澳·台",ESPN
 http://41.205.93.154/ESPN/index.m3u8
 
@@ -132,10 +128,10 @@ http://108.181.20.197/livehttpplay
 http://serv00.bkpcp.top/litv3.php
 
 #EXTGRP:🏀体育频道
-#EXTINF:-1 tvg-id="体育赛事" tvg-name="体育赛事" tvg-logo="https://epg.v1.mk/logo/体育赛事.png" group-title="🏀体育频道",体育赛事
-https://ldcctvwbcdbd.a.bdydns.com/ldcctvwbcd/cdrmldcctv5plus_1/index.m3u8
 #EXTINF:-1 tvg-id="广州竞赛" tvg-name="广州竞赛" tvg-logo="https://epg.v1.mk/logo/广州竞赛.png" group-title="🏀体育频道",广州竞赛
 http://8.138.7.223/tv/gzjs.m3u8
+#EXTINF:-1 tvg-id="联通山东体育" tvg-name="联通山东体育" tvg-logo="https://epg.v1.mk/logo/山东体育.png" group-title="🏀体育频道",山东体育
+http://124.128.73.58:9901/tsfile/live/1001_1.m3u8
 
 #EXTGRP:🪁动画频道
 #EXTINF:-1 tvg-id="少儿动画" tvg-name="少儿动画" tvg-logo="https://epg.v1.mk/logo/少儿动画.png" group-title="🪁动画频道",少儿动画
@@ -736,12 +732,12 @@ https://newcntv.qcloudcdn.com/asp/hls/1200/0303000a/3/default/b4667f3a746e4d2382
 https://newcntv.qcloudcdn.com/asp/hls/1200/0303000a/3/default/6c438ef0a3cc492fa136ae39a4da941e/1200.m3u8
 #EXTINF:-1 tvg-id="金鹰卡通" tvg-name="金鹰卡通" tvg-logo="https://epg.v1.mk/logo/金鹰卡通.png" group-title="🪁动画频道",金鹰卡通
 http://125.114.241.226:9901/tsfile/live/1001_1.m3u8
-#EXTINF:-1 tvg-id="炫动卡通" tvg-name="炫动卡通" tvg-logo="https://epg.v1.mk/logo/炫动卡通.png" group-title="🪁动画频道",炫动卡通
-http://218.15.183.23:9901/tsfile/live/23042_1.m3u8
-#EXTINF:-1 tvg-id="浙江少儿" tvg-name="浙江少儿" tvg-logo="https://epg.v1.mk/logo/浙江少儿.png" group-title="🪁动画频道",浙江少儿
-https://ali-m-l.cztv.com/channels/lantian/channel008/1080p.m3u8
 #EXTINF:-1 tvg-id="火影忍者" tvg-name="火影忍者" tvg-logo="https://epg.v1.mk/logo/火影忍者.png" group-title="🪁动画频道",火影忍者
 https://hd.ijycnd.com/play/Yer3NWLa/index.m3u8
+
+#EXTGRP:🎵音乐频道
+#EXTINF:-1 tvg-id="CNR4经典音乐广播" tvg-name="CNR4经典音乐广播" tvg-logo="https://epg.v1.mk/logo/音乐广播.png" group-title="🎵音乐频道",音乐广播
+https://ngcdn001.cnr.cn/live/dszs/index.m3u8
 
 #EXTGRP:🏛经典剧场
 #EXTINF:-1 tvg-id="西游记" tvg-name="西游记" tvg-logo="https://epg.v1.mk/logo/西游记.png" group-title="🏛经典剧场",西游记
@@ -760,6 +756,10 @@ https://v.cdnlz19.com/20240410/26916_a792b2eb/index.m3u8
 https://v.cdnlz19.com/20240407/26867_8099d9cf/index.m3u8
 #EXTINF:-1 tvg-id="惊魂记1989国语香港恐怖片" tvg-name="惊魂记1989国语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
 https://v.cdnlz19.com/20240223/18132_e221e7cf/index.m3u8
+#EXTINF:-1 tvg-id="咒乐园粤语香港恐怖片" tvg-name="咒乐园粤语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
+https://v1.cdnlz1.com/20231109/23505_05017126/index.m3u8
+#EXTINF:-1 tvg-id="入魔1994粤语香港恐怖片" tvg-name="入魔1994粤语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
+https://vip1.lz-cdn1.com/20230808/21693_d666303c/index.m3u8
 #EXTINF:-1 tvg-id="人肉天妇罗1993粤语香港恐怖片" tvg-name="人肉天妇罗1993粤语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
 https://vip1.lz-cdn1.com/20230808/21691_d206f7b0/index.m3u8
 #EXTINF:-1 tvg-id="猛鬼三宝粤语香港恐怖片" tvg-name="猛鬼三宝粤语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
@@ -776,8 +776,6 @@ https://vip1.lz-cdn1.com/20220527/6772_239c56e6/index.m3u8
 https://vip1.lz-cdn1.com/20220524/6691_5ebb2865/index.m3u8
 #EXTINF:-1 tvg-id="吉屋粤语香港恐怖片" tvg-name="吉屋粤语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
 https://vip1.lz-cdn1.com/20220524/6669_60974908/index.m3u8
-#EXTINF:-1 tvg-id="山狗1999粤语香港恐怖片" tvg-name="山狗1999粤语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
-https://vip1.lz-cdn1.com/20220524/6622_1d24a76f/index.m3u8
 #EXTINF:-1 tvg-id="追凶二十年国语香港恐怖片" tvg-name="追凶二十年国语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
 https://vip1.lz-cdn1.com/20220522/6368_2344f2d9/index.m3u8
 #EXTINF:-1 tvg-id="夜半一点钟国语香港恐怖片" tvg-name="夜半一点钟国语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
@@ -846,8 +844,6 @@ https://vip1.lz-cdn1.com/20220405/1083_7f23af48/index.m3u8
 https://vip1.lz-cdn1.com/20220405/1171_1dc6eef6/index.m3u8
 #EXTINF:-1 tvg-id="血玫瑰国语香港恐怖片" tvg-name="血玫瑰国语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
 https://vip1.lz-cdn1.com/20220405/1174_04863e1f/index.m3u8
-#EXTINF:-1 tvg-id="原振侠与卫斯理国语香港恐怖片" tvg-name="原振侠与卫斯理国语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
-https://vip1.lz-cdn1.com/20220404/965_165e3a65/index.m3u8
 #EXTINF:-1 tvg-id="天煞国语香港恐怖片" tvg-name="天煞国语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
 https://vip1.lz-cdn1.com/20220404/955_a167d91c/index.m3u8
 #EXTINF:-1 tvg-id="猛鬼舞厅国语香港恐怖片" tvg-name="猛鬼舞厅国语香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
@@ -878,8 +874,6 @@ https://vip1.lz-cdn1.com/20220404/864_5e7573e8/index.m3u8
 https://vip1.lz-cdn1.com/20220404/847_6b018411/index.m3u8
 #EXTINF:-1 tvg-id="荒岛尸变粤语2019香港恐怖片" tvg-name="荒岛尸变粤语2019香港恐怖片" tvg-logo="https://epg.v1.mk/logo/香港恐怖.png" group-title="🏛经典剧场",香港恐怖
 https://vip1.lz-cdn1.com/20220323/398_1dfabf26/index.m3u8
-#EXTINF:-1 tvg-id="成龙" tvg-name="成龙" tvg-logo="https://epg.v1.mk/logo/电影_成龙.png" group-title="🏛经典剧场",电影_成龙
-https://p6-dy.byteimg.com/origin/pgc-image/bebfddceee5c40f495882785675174cf
 #EXTINF:-1 tvg-id="成龙金喜善_美丽的神话" tvg-name="成龙金喜善_美丽的神话" tvg-logo="https://epg.v1.mk/logo/电影_成龙.png" group-title="🏛经典剧场",电影_成龙
 https://15799848.s21v.faiusr.com/58/ABUIABA6GAAg_tma4gUowLvk9wM.mp4
 #EXTINF:-1 tvg-id="刘德华-如果有一天演唱会" tvg-name="刘德华-如果有一天演唱会" tvg-logo="https://epg.v1.mk/logo/电影_刘德华.png" group-title="🏛经典剧场",电影_刘德华
@@ -898,8 +892,6 @@ https://sk.cri.cn/905.m3u8
 https://ngcdn002.cnr.cn/live/jjzs/index.m3u8
 #EXTINF:-1 tvg-id="浙江浙江之声" tvg-name="浙江浙江之声" tvg-logo="https://epg.v1.mk/logo/浙江之声.png" group-title="在线广播",浙江之声
 http://ali-m-l.cztv.com/channels/lantian/fm88/128k.m3u8
-#EXTINF:-1 tvg-id="浙江交通之声" tvg-name="浙江交通之声" tvg-logo="https://epg.v1.mk/logo/浙江交通之声.png" group-title="在线广播",浙江交通之声
-http://ali-m-l.cztv.com/channels/lantian/fm93/128k.m3u8
 #EXTINF:-1 tvg-id="浙江城市之声" tvg-name="浙江城市之声" tvg-logo="https://epg.v1.mk/logo/浙江城市之声.png" group-title="在线广播",浙江城市之声
 http://ali-m-l.cztv.com/channels/lantian/fm107/128k.m3u8
 #EXTINF:-1 tvg-id="浙江旅游之声" tvg-name="浙江旅游之声" tvg-logo="https://epg.v1.mk/logo/浙江旅游之声.png" group-title="在线广播",浙江旅游之声
@@ -908,6 +900,8 @@ http://ali-m-l.cztv.com/channels/lantian/fm1045/128k.m3u8
 https://sk.cri.cn/hxfh.m3u8
 #EXTINF:-1 tvg-id="CNR11藏语广播" tvg-name="CNR11藏语广播" tvg-logo="https://epg.v1.mk/logo/藏语广播.png" group-title="在线广播",藏语广播
 https://ngcdn001.cnr.cn/live/zygb/index.m3u8
+#EXTINF:-1 tvg-id="CNR17哈萨克语广播" tvg-name="CNR17哈萨克语广播" tvg-logo="https://epg.v1.mk/logo/哈萨克语广播.png" group-title="在线广播",哈萨克语广播
+https://ngcdn001.cnr.cn/live/hygb/index.m3u8
 
 
-# 总计: 445 个频道
+# 总计: 441 个频道

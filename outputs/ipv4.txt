@@ -1,6 +1,6 @@
 # 电视频道列表
-# 生成时间: 2025-07-16 14:00:17
-# 总计频道: 485 个
+# 生成时间: 2025-07-16 14:23:50
+# 总计频道: 481 个
 
 央视频道,#genre#
 CCTV1,http://116.128.242.83:9901/tsfile/live/0012_1.m3u8
@@ -25,6 +25,7 @@ CCTV7,http://8.138.7.223/tv/cctv7.m3u8
 CCTV7,http://58.221.214.82:9901/tsfile/live/0007_1.m3u8
 CCTV8,http://39.164.180.36:19901/tsfile/live/0008_1.m3u8
 CCTV9,http://39.164.180.36:19901/tsfile/live/0009_1.m3u8
+CCTV,https://vip1.lz-cdn1.com/20230527/21048_9f507eb4/index.m3u8
 CCTV,https://cd-live-stream.news.cctvplus.com/live/smil:CHANNEL1.smil/playlist.m3u8
 CCTV,https://cd-live-stream.news.cctvplus.com/live/smil:CHANNEL2.smil/playlist.m3u8
 
@@ -44,10 +45,9 @@ CCTV,https://cd-live-stream.news.cctvplus.com/live/smil:CHANNEL2.smil/playlist.m
 西藏卫视,http://124.128.73.58:9901/tsfile/live/0111_1.m3u8
 云南卫视,http://61.138.128.226:19901/tsfile/live/0119_1.m3u8
 卫视,http://112.46.105.20:8009/hls/27/index.m3u8
+卫视,http://l.cztvcloud.com/channels/lantian/SXxinchang2/720p.m3u8
 卫视,https://fenghuang.tv12.xyz/187.m3u8
 卫视,http://61.216.67.119:1935/bltvhd/bltv1/chunklist_w1266569526.m3u8
-卫视,http://124.128.73.58:9901/tsfile/live/0114_1.m3u8
-卫视,http://58.57.40.22:9901/tsfile/live/1026_1.m3u8
 卫视,http://38.64.72.148:80/hls/modn/list/4010/chunklist0.m3u8
 
 港·澳·台,#genre#
@@ -57,13 +57,11 @@ J2,https://vd4.bdstatic.com/mda-na5fafrtbvvf5wib/hd/cae_h264_delogo/164199638707
 Viutv,https://turkmedya-live.ercdn.net/tv360/tv360.m3u8
 东森超视,http://38.64.72.148:80/hls/modn/list/2013/chunklist0.m3u8
 DW,https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/stream05/streamPlaylist.m3u8
-DW,http://38b891c9.rossteleccom.net/iptv/UAWZS54EW64RZB/19153/index.m3u8
 中視,https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV34.m3u8
 台視,https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV25.m3u8
 華視,https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV26.m3u8
 華視,https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV94.m3u8
 緯來體育,http://live4play.uk/livehttpplay
-CBS SPORTS NETWORK,http://38b891c9.rossteleccom.net/iptv/UAWZS54EW64RZB/7324/index.m3u8
 ESPN,http://41.205.93.154/ESPN/index.m3u8
 
 🎬电影频道,#genre#
@@ -71,8 +69,8 @@ ESPN,http://41.205.93.154/ESPN/index.m3u8
 靖天戏剧,http://serv00.bkpcp.top/litv3.php
 
 🏀体育频道,#genre#
-体育赛事,https://ldcctvwbcdbd.a.bdydns.com/ldcctvwbcd/cdrmldcctv5plus_1/index.m3u8
 广州竞赛,http://8.138.7.223/tv/gzjs.m3u8
+山东体育,http://124.128.73.58:9901/tsfile/live/1001_1.m3u8
 
 🪁动画频道,#genre#
 少儿动画,http://218.15.183.23:9901/tsfile/live/23045_1.m3u8
@@ -374,9 +372,10 @@ ESPN,http://41.205.93.154/ESPN/index.m3u8
 少儿动画,https://newcntv.qcloudcdn.com/asp/hls/1200/0303000a/3/default/b4667f3a746e4d2382835b3d2c2a2ff7/1200.m3u8
 少儿动画,https://newcntv.qcloudcdn.com/asp/hls/1200/0303000a/3/default/6c438ef0a3cc492fa136ae39a4da941e/1200.m3u8
 金鹰卡通,http://125.114.241.226:9901/tsfile/live/1001_1.m3u8
-炫动卡通,http://218.15.183.23:9901/tsfile/live/23042_1.m3u8
-浙江少儿,https://ali-m-l.cztv.com/channels/lantian/channel008/1080p.m3u8
 火影忍者,https://hd.ijycnd.com/play/Yer3NWLa/index.m3u8
+
+🎵音乐频道,#genre#
+音乐广播,https://ngcdn001.cnr.cn/live/dszs/index.m3u8
 
 🏛经典剧场,#genre#
 西游记,https://txmov2.a.kwimgs.com/bs3/video-hls/5239093806671579134_hlsb.m3u8
@@ -387,6 +386,8 @@ ESPN,http://41.205.93.154/ESPN/index.m3u8
 香港恐怖,https://v.cdnlz19.com/20240410/26916_a792b2eb/index.m3u8
 香港恐怖,https://v.cdnlz19.com/20240407/26867_8099d9cf/index.m3u8
 香港恐怖,https://v.cdnlz19.com/20240223/18132_e221e7cf/index.m3u8
+香港恐怖,https://v1.cdnlz1.com/20231109/23505_05017126/index.m3u8
+香港恐怖,https://vip1.lz-cdn1.com/20230808/21693_d666303c/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20230808/21691_d206f7b0/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20230516/21004_2382e6d9/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220522/6355_f18c186b/index.m3u8
@@ -395,7 +396,6 @@ ESPN,http://41.205.93.154/ESPN/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220527/6772_239c56e6/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220524/6691_5ebb2865/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220524/6669_60974908/index.m3u8
-香港恐怖,https://vip1.lz-cdn1.com/20220524/6622_1d24a76f/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220522/6368_2344f2d9/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220522/6353_43a8c495/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220522/6336_1958e9bd/index.m3u8
@@ -430,7 +430,6 @@ ESPN,http://41.205.93.154/ESPN/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220405/1083_7f23af48/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220405/1171_1dc6eef6/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220405/1174_04863e1f/index.m3u8
-香港恐怖,https://vip1.lz-cdn1.com/20220404/965_165e3a65/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220404/955_a167d91c/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220404/943_66d87b30/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220404/920_7dd5da8b/index.m3u8
@@ -446,7 +445,6 @@ ESPN,http://41.205.93.154/ESPN/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220404/864_5e7573e8/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220404/847_6b018411/index.m3u8
 香港恐怖,https://vip1.lz-cdn1.com/20220323/398_1dfabf26/index.m3u8
-电影_成龙,https://p6-dy.byteimg.com/origin/pgc-image/bebfddceee5c40f495882785675174cf
 电影_成龙,https://15799848.s21v.faiusr.com/58/ABUIABA6GAAg_tma4gUowLvk9wM.mp4
 电影_刘德华,http://em.21dtv.com/songs/60036969.mkv
 电影_刘德华,http://em.21dtv.com/songs/60039259.mkv
@@ -457,10 +455,10 @@ ESPN,http://41.205.93.154/ESPN/index.m3u8
 CRI环球资讯广播,https://sk.cri.cn/905.m3u8
 CNR经济之声,https://ngcdn002.cnr.cn/live/jjzs/index.m3u8
 浙江之声,http://ali-m-l.cztv.com/channels/lantian/fm88/128k.m3u8
-浙江交通之声,http://ali-m-l.cztv.com/channels/lantian/fm93/128k.m3u8
 浙江城市之声,http://ali-m-l.cztv.com/channels/lantian/fm107/128k.m3u8
 浙江旅游之声,http://ali-m-l.cztv.com/channels/lantian/fm1045/128k.m3u8
 世界华声,https://sk.cri.cn/hxfh.m3u8
 藏语广播,https://ngcdn001.cnr.cn/live/zygb/index.m3u8
+哈萨克语广播,https://ngcdn001.cnr.cn/live/hygb/index.m3u8
 
-# 实际导出: 445 个有效频道
+# 实际导出: 441 个有效频道

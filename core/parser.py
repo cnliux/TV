@@ -38,7 +38,7 @@ class PlaylistParser:
 
     def _init_remove_params(self) -> set:
         """初始化需要移除的URL参数"""
-        params = {'key', 'playlive', 'authid', 'token'}
+        params = {'key', 'playlive', 'authid'}
         if self.config and self.config.has_section('URL_FILTER'):
             extra = self.config.get('URL_FILTER', 'remove_params', fallback='')
             params.update(p.strip() for p in extra.split(',') if p.strip())

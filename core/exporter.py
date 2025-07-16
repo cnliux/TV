@@ -1,260 +1,328 @@
 #!/usr/bin/env python3
-from pathlib import Path
-from typing import List, Callable, Set, Dict
 import logging
+from pathlib import Path
+from typing import List, Dict, Set, Callable, Tuple
+import re
+import configparser
 from datetime import datetime
 from .models import Channel
 from .matcher import AutoCategoryMatcher
-import re
-import os
+
+logger = logging.getLogger(__name__)
 
 class ResultExporter:
-    def __init__(self, output_dir: str, enable_history: bool, template_path: str, config, matcher):
+    """增强版结果导出器，支持多种输出格式和严格分类管理"""
+    
+    def __init__(self, output_dir: str, enable_history: bool, template_path: str,
+                 config: configparser.ConfigParser, matcher: AutoCategoryMatcher):
         """
         初始化导出器
-        :param output_dir: 输出目录
-        :param enable_history: 是否启用历史记录
-        :param template_path: 模板文件路径
-        :param config: 配置对象
-        :param matcher: 分类匹配器
+        
+        Args:
+            output_dir: 输出目录路径
+            enable_history: 是否启用历史记录
+            template_path: 分类模板路径
+            config: 配置对象
+            matcher: 分类匹配器实例
         """
         self.output_dir = Path(output_dir)
         self.enable_history = enable_history
-        self.template_path = template_path
         self.config = config
         self.matcher = matcher
-        self.logger = logging.getLogger(__name__)
         
-        # 从配置获取路径
+        # 初始化路径配置
         self.uncategorized_path = Path(config.get(
-            'PATHS', 
-            'uncategorized_channels_path',
-            fallback='config/uncategorized_channels.txt'
-        ))
+            'EXPORTER', 'uncategorized_channels_path',
+            fallback='config/uncategorized_channels.txt'))
+        self.failed_urls_path = Path(config.get(
+            'TESTER', 'failed_urls_path',
+            fallback='config/failed_urls.txt'))
         
+        # EPG和台标配置
+        self.epg_url = config.get('EXPORTER', 'm3u_epg_url', fallback='')
+        self.logo_template = config.get(
+            'EXPORTER', 'm3u_logo_url',
+            fallback='https://epg.v1.mk/logo/{name}.png')
+        
+        # 创建必要目录
         self._ensure_dirs()
 
-    def _ensure_dirs(self):
+    def _ensure_dirs(self) -> None:
         """确保所有输出目录存在"""
-        try:
-            self.output_dir.mkdir(parents=True, exist_ok=True)
-            self.uncategorized_path.parent.mkdir(parents=True, exist_ok=True)
-        except Exception as e:
-            self.logger.error(f"创建目录失败: {str(e)}")
-            raise
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.uncategorized_path.parent.mkdir(parents=True, exist_ok=True)
+        self.failed_urls_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def export(self, channels: List[Channel], progress_cb: Callable):
-        """主导出流程"""
+    def export(self, channels: List[Channel], progress_cb: Callable) -> Dict:
+        """
+        主导出流程
+        
+        Args:
+            channels: 频道列表
+            progress_cb: 进度回调函数
+            
+        Returns:
+            包含导出统计信息的字典
+        """
         try:
             # 加载白名单
             whitelist = self._load_whitelist()
             
-            # 是否包含未分类频道
-            include_uncategorized = self.config.getboolean('EXPORTER', 'include_uncategorized', fallback=True)
+            # 分离在线频道
+            valid_channels = [c for c in channels if c.status == 'online']
             
-            # 按模板排序
+            # 严格分离已分类和未分类频道
+            categorized, uncategorized = self._separate_channels(valid_channels)
+            
+            # 按模板排序已分类频道
             sorted_channels = self.matcher.sort_channels_by_template(
-                channels, whitelist, include_uncategorized
-            )
+                categorized, whitelist, include_uncategorized=False)
             
-            # 分类IPv4/IPv6
-            ipv4_channels, ipv6_channels = self._classify_channels(sorted_channels)
+            # 按IP版本分类
+            ipv4, ipv6 = self._classify_channels(sorted_channels)
             
-            # 导出合并文件
-            self._export_combined_files(ipv4_channels, ipv6_channels)
-            
-            # 导出独立文件
-            self._export_separated_files(ipv4_channels, ipv6_channels)
+            # 导出主文件
+            stats = {
+                'all': self._write_txt(self.output_dir / "all.txt", sorted_channels),
+                'ipv4': self._write_txt(self.output_dir / "ipv4.txt", ipv4),
+                'ipv6': self._write_txt(self.output_dir / "ipv6.txt", ipv6),
+                'm3u': {
+                    'all': self._write_m3u(self.output_dir / "all.m3u", sorted_channels),
+                    'ipv4': self._write_m3u(self.output_dir / "ipv4.m3u", ipv4),
+                    'ipv6': self._write_m3u(self.output_dir / "ipv6.m3u", ipv6)
+                }
+            }
             
             # 导出未分类频道
-            if include_uncategorized:
-                self._export_uncategorized_channels(channels)
+            uncat_count = self._export_uncategorized(uncategorized)
             
-            progress_cb(1)
+            # 更新进度
+            progress_cb()
+            
+            return {
+                "total_channels": len(valid_channels),
+                "categorized": len(categorized),
+                "uncategorized": uncat_count,
+                "file_stats": stats
+            }
             
         except Exception as e:
-            self.logger.error(f"导出过程中发生错误: {str(e)}", exc_info=True)
+            logger.error(f"导出过程中发生错误: {str(e)}", exc_info=True)
             raise
+
+    def _separate_channels(self, channels: List[Channel]) -> Tuple[List[Channel], List[Channel]]:
+        """
+        严格分离已分类和未分类频道
+        
+        Args:
+            channels: 待分类的频道列表
+            
+        Returns:
+            (已分类频道列表, 未分类频道列表)
+        """
+        categorized = []
+        uncategorized = []
+        
+        for chan in channels:
+            if chan.category == "未分类":
+                uncategorized.append(chan)
+            else:
+                categorized.append(chan)
+                
+        return categorized, uncategorized
+
+    def _write_txt(self, path: Path, channels: List[Channel]) -> int:
+        """
+        导出TXT格式的频道列表
+        
+        Args:
+            path: 输出文件路径
+            channels: 频道列表
+            
+        Returns:
+            成功导出的频道数量
+        """
+        try:
+            seen_urls = set()
+            current_category = None
+            count = 0
+            
+            with open(path, 'w', encoding='utf-8') as f:
+                # 写入文件头
+                f.write("# 电视频道列表\n")
+                f.write(f"# 生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"# 总计频道: {len(channels)} 个\n\n")
+                
+                # 按分类写入频道
+                for chan in channels:
+                    if chan.category == "未分类" or chan.url in seen_urls:
+                        continue
+                        
+                    # 分类标题
+                    if chan.category != current_category:
+                        if current_category is not None:
+                            f.write("\n")
+                        current_category = chan.category
+                        f.write(f"{current_category},#genre#\n")
+                    
+                    # 频道条目
+                    f.write(f"{chan.name},{chan.url}\n")
+                    seen_urls.add(chan.url)
+                    count += 1
+                
+                # 写入文件尾
+                f.write(f"\n# 实际导出: {count} 个有效频道\n")
+            
+            logger.info(f"成功导出 TXT 文件: {path} (频道数: {count})")
+            return count
+            
+        except Exception as e:
+            logger.error(f"导出 TXT 文件失败: {path} - {str(e)}")
+            return 0
+
+    def _write_m3u(self, path: Path, channels: List[Channel]) -> int:
+        """
+        导出M3U格式的播放列表
+        
+        Args:
+            path: 输出文件路径
+            channels: 频道列表
+            
+        Returns:
+            成功导出的频道数量
+        """
+        try:
+            seen_urls = set()
+            current_category = None
+            count = 0
+            
+            with open(path, 'w', encoding='utf-8') as f:
+                # M3U文件头
+                f.write("#EXTM3U\n")
+                if self.epg_url:
+                    f.write(f"#EXT-X-EPGURL:{self.epg_url}\n")
+                f.write(f"#EXT-X-PLAYLIST-TYPE:VOD\n")
+                f.write(f"#EXT-X-VERSION:3\n\n")
+                
+                # 写入频道条目
+                for chan in channels:
+                    if chan.category == "未分类" or chan.url in seen_urls:
+                        continue
+                        
+                    # 分类分组标记
+                    if chan.category != current_category:
+                        if current_category is not None:
+                            f.write("\n")
+                        current_category = chan.category
+                        f.write(f"#EXTGRP:{current_category}\n")
+                    
+                    # 频道信息
+                    logo = self.logo_template.format(name=chan.name)
+                    f.write(
+                        f'#EXTINF:-1 tvg-id="{chan.tvg_id}" '
+                        f'tvg-name="{chan.tvg_name}" '
+                        f'tvg-logo="{logo}" '
+                        f'group-title="{chan.category}",{chan.name}\n'
+                    )
+                    f.write(f"{chan.url}\n")
+                    
+                    seen_urls.add(chan.url)
+                    count += 1
+                
+                # 文件尾
+                f.write(f"\n# 总计: {count} 个频道\n")
+            
+            logger.info(f"成功导出 M3U 文件: {path} (频道数: {count})")
+            return count
+            
+        except Exception as e:
+            logger.error(f"导出 M3U 文件失败: {path} - {str(e)}")
+            return 0
+
+    def _export_uncategorized(self, channels: List[Channel]) -> int:
+        """
+        导出未分类频道到专用文件
+        
+        Args:
+            channels: 未分类频道列表
+            
+        Returns:
+            成功导出的频道数量
+        """
+        if not channels:
+            return 0
+            
+        try:
+            # 按原始分类分组
+            category_map = {}
+            for chan in channels:
+                category = chan.source_category if chan.source_category else "未分组"
+                if category not in category_map:
+                    category_map[category] = []
+                category_map[category].append(chan)
+            
+            # 写入文件
+            count = 0
+            seen_urls = set()
+            
+            with open(self.uncategorized_path, 'w', encoding='utf-8') as f:
+                # 文件头
+                f.write("# 未分类频道列表\n")
+                f.write(f"# 生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"# 总计未分类频道: {len(channels)} 个\n\n")
+                
+                # 按分类名称排序输出
+                for category in sorted(category_map.keys()):
+                    f.write(f"\n{category},#genre#\n")
+                    
+                    # 按频道名称排序
+                    for chan in sorted(category_map[category], key=lambda x: x.name):
+                        if chan.url not in seen_urls:
+                            f.write(f"{chan.name},{chan.url}\n")
+                            seen_urls.add(chan.url)
+                            count += 1
+                
+                # 文件尾
+                f.write(f"\n# 实际导出: {count} 个唯一频道\n")
+            
+            logger.info(f"已导出 {count} 个未分类频道 -> {self.uncategorized_path}")
+            return count
+            
+        except Exception as e:
+            logger.error(f"导出未分类频道失败: {str(e)}", exc_info=True)
+            return 0
 
     def _load_whitelist(self) -> Set[str]:
         """加载白名单"""
-        whitelist_path = Path(self.config.get('WHITELIST', 'whitelist_path', fallback='config/whitelist.txt'))
-        if whitelist_path.exists():
-            with open(whitelist_path, 'r', encoding='utf-8') as f:
+        path = Path(self.config.get('WHITELIST', 'whitelist_path',
+                                  fallback='config/whitelist.txt'))
+        if path.exists():
+            with open(path, 'r', encoding='utf-8') as f:
                 return {line.strip() for line in f if line.strip() and not line.startswith('#')}
         return set()
 
-    def _classify_channels(self, channels: List[Channel]) -> (List[Channel], List[Channel]):
-        """分类IPv4和IPv6频道"""
-        ipv6_pattern = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[a-fA-F0-9:]{4,})')
-        ipv4_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
-
-        ipv4_channels = []
-        ipv6_channels = []
-        domain_handling = self.config.get('MAIN', 'domain_handling', fallback='ipv4')
-
-        for channel in channels:
-            url = channel.url
-            if ipv6_pattern.search(url):
-                ipv6_channels.append(channel)
-            elif ipv4_pattern.search(url):
-                ipv4_channels.append(channel)
+    def _classify_channels(self, channels: List[Channel]) -> Tuple[List[Channel], List[Channel]]:
+        """
+        按IP版本分类频道
+        
+        Args:
+            channels: 待分类频道列表
+            
+        Returns:
+            (IPv4频道列表, IPv6频道列表)
+        """
+        ipv6_pat = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[\w:]+:[a-fA-F0-9:]+)')
+        ipv4_pat = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?')
+        
+        ipv4, ipv6 = [], []
+        for chan in channels:
+            if ipv6_pat.search(chan.url):
+                ipv6.append(chan)
+            elif ipv4_pat.search(chan.url):
+                ipv4.append(chan)
+            elif self.config.get('MAIN', 'domain_handling', fallback='ipv4') == 'ipv6':
+                ipv6.append(chan)
             else:
-                if domain_handling == 'ipv6':
-                    ipv6_channels.append(channel)
-                else:
-                    ipv4_channels.append(channel)
-
-        self.logger.info(f"IP分类统计: IPv4={len(ipv4_channels)}, IPv6={len(ipv6_channels)}")
-        return ipv4_channels, ipv6_channels
-
-    def _export_combined_files(self, ipv4_channels: List[Channel], ipv6_channels: List[Channel]):
-        """导出合并文件"""
-        prefer_ip_version = self.config.get('MAIN', 'prefer_ip_version', fallback='both')
+                ipv4.append(chan)
         
-        # 过滤掉未分类和离线频道
-        ipv4_channels = [c for c in ipv4_channels if c.category != "未分类" and c.status == 'online']
-        ipv6_channels = [c for c in ipv6_channels if c.category != "未分类" and c.status == 'online']
-        
-        if prefer_ip_version == 'ipv6':
-            all_channels = ipv6_channels + ipv4_channels
-        elif prefer_ip_version == 'ipv4':
-            all_channels = ipv4_channels + ipv6_channels
-        else:
-            all_channels = ipv4_channels + ipv6_channels
-
-        self._write_m3u_file(self.output_dir / "all.m3u", all_channels)
-        self._write_txt_file(self.output_dir / "all.txt", all_channels)
-
-    def _export_separated_files(self, ipv4_channels: List[Channel], ipv6_channels: List[Channel]):
-        """导出独立文件"""
-        # 过滤掉未分类和离线频道
-        ipv4_channels = [c for c in ipv4_channels if c.category != "未分类" and c.status == 'online']
-        ipv6_channels = [c for c in ipv6_channels if c.category != "未分类" and c.status == 'online']
-        
-        self._write_m3u_file(self.output_dir / "ipv4.m3u", ipv4_channels)
-        self._write_txt_file(self.output_dir / "ipv4.txt", ipv4_channels)
-        self._write_m3u_file(self.output_dir / "ipv6.m3u", ipv6_channels)
-        self._write_txt_file(self.output_dir / "ipv6.txt", ipv6_channels)
-
-    def _write_m3u_file(self, path: Path, channels: List[Channel]):
-        """写入M3U文件"""
-        try:
-            seen_urls = set()
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write("#EXTM3U\n")
-                epg_url = self.config.get('EXPORTER', 'm3u_epg_url', fallback='')
-                if epg_url:
-                    f.write(f"#EXT-X-EPGURL:{epg_url}\n")
-                
-                for chan in channels:
-                    if chan.url not in seen_urls:
-                        logo_url = self.config.get('EXPORTER', 'm3u_logo_url', fallback='').format(name=chan.name)
-                        f.write(f'#EXTINF:-1 tvg-id="{chan.tvg_id}" tvg-name="{chan.tvg_name}" '
-                               f'tvg-logo="{logo_url}" group-title="{chan.group_title}",{chan.name}\n')
-                        f.write(f"{chan.url}\n")
-                        seen_urls.add(chan.url)
-            
-            self.logger.info(f"成功写入M3U文件: {path} (频道数: {len(seen_urls)})")
-        except Exception as e:
-            self.logger.error(f"写入M3U文件失败: {path} ({str(e)})")
-            raise
-
-    def _write_txt_file(self, path: Path, channels: List[Channel]):
-        """写入TXT文件（严格按分类结构）"""
-        try:
-            seen_urls = set()
-            with open(path, 'w', encoding='utf-8') as f:
-                # 1. 写入模板分类
-                for category in self.matcher._category_order:
-                    cat_channels = [
-                        c for c in channels 
-                        if c.category == category 
-                        and c.url not in seen_urls
-                    ]
-                    
-                    if cat_channels:
-                        f.write(f"{category},#genre#\n")
-                        for chan in cat_channels:
-                            f.write(f"{chan.name},{chan.url}\n")
-                            seen_urls.add(chan.url)
-                        f.write("\n")
-                
-                # 2. 写入其他有效分类（来自original_category）
-                other_categories = {
-                    c.original_category for c in channels 
-                    if c.original_category 
-                    and c.original_category != "未分类"
-                    and c.original_category not in self.matcher._category_order
-                }
-                
-                for cat in sorted(other_categories):
-                    cat_channels = [
-                        c for c in channels 
-                        if c.original_category == cat 
-                        and c.url not in seen_urls
-                    ]
-                    
-                    if cat_channels:
-                        f.write(f"{cat},#genre#\n")
-                        for chan in cat_channels:
-                            f.write(f"{chan.name},{chan.url}\n")
-                            seen_urls.add(chan.url)
-                        f.write("\n")
-                
-                # 3. 写入真正的未分类（没有有效original_category的）
-                true_uncategorized = [
-                    c for c in channels 
-                    if c.category == "未分类" 
-                    and (not c.original_category or c.original_category == "未分类")
-                    and c.url not in seen_urls
-                ]
-                
-                if true_uncategorized:
-                    f.write("未分类,#genre#\n")
-                    for chan in true_uncategorized:
-                        f.write(f"{chan.name},{chan.url}\n")
-            
-            self.logger.info(f"成功写入TXT文件: {path} (频道数: {len(seen_urls)})")
-        except Exception as e:
-            self.logger.error(f"写入TXT文件失败: {path} ({str(e)})")
-            raise
-
-    def _export_uncategorized_channels(self, channels: List[Channel]):
-        """
-        导出纯净的未分类频道
-        仅包含：
-        - category为"未分类"
-        - original_category为空或"未分类"
-        - 在线状态
-        """
-        uncategorized = [
-            c for c in channels 
-            if c.category == "未分类" 
-            and (not c.original_category or c.original_category == "未分类")
-            and c.status == 'online'
-        ]
-        
-        if not uncategorized:
-            self.logger.info("未发现符合条件的未分类频道，跳过导出")
-            return
-
-        try:
-            with open(self.uncategorized_path, 'w', encoding='utf-8') as f:
-                f.write("未分类,#genre#\n")
-                for chan in uncategorized:
-                    f.write(f"{chan.name},{chan.url}\n")
-            
-            self.logger.info(
-                f"成功导出纯净未分类频道\n"
-                f"文件路径: {self.uncategorized_path}\n"
-                f"频道数量: {len(uncategorized)}"
-            )
-        except Exception as e:
-            self.logger.error(
-                f"导出未分类频道失败\n"
-                f"目标路径: {self.uncategorized_path}\n"
-                f"错误详情: {str(e)}",
-                exc_info=True
-            )
-            raise
+        return ipv4, ipv6

@@ -3,12 +3,13 @@ import os
 import asyncio
 import configparser
 from pathlib import Path
-from typing import List, Set, Callable, Iterable
+from typing import List, Set, Callable, Iterable, Dict, Tuple
 import re
 import logging
 import gc
 import math
 import time
+from collections import defaultdict
 from core import (
     SourceFetcher,
     PlaylistParser,
@@ -159,6 +160,7 @@ async def main():
         # 读取 PATHS 配置
         urls_path = Path(config.get('PATHS', 'urls_path', fallback='config/urls.txt'))
         templates_path = Path(config.get('PATHS', 'templates_path', fallback='config/templates.txt'))
+        uncategorized_path = Path(config.get('PATHS', 'uncategorized_channels_path', fallback='config/uncategorized_channels.txt'))
         
         # 检查文件是否存在
         if not urls_path.exists():
@@ -203,15 +205,28 @@ async def main():
         matcher = AutoCategoryMatcher(str(templates_path), config)
         classify_progress = SmartProgress(len(all_channels), "🏷🏷🏷🏷️ 分类频道")
         
+        # 收集未分类的频道 - 按原始分类分组
+        uncategorized_groups = defaultdict(list)
+        
         # 优化2: 合并过滤步骤 (模板过滤、黑名单过滤、去重)
         processed_channels = []
         seen_urls = set()
         
         for chan in all_channels:
+            # 保存原始分类信息
+            original_category = chan.category or "未分类"
+            
             # 频道名称标准化
             chan.name = matcher.normalize_channel_name(chan.name)
             # 智能分类
             chan.category = matcher.match(chan.name)
+            
+            # 检查是否分类成功
+            if not chan.category or chan.category == "未分类":
+                # 清理频道名称中的特殊字符
+                clean_name = re.sub(r'[\n\r\t]', ' ', chan.name).strip()
+                # 添加到未分类列表，按原始分类分组
+                uncategorized_groups[original_category].append((clean_name, chan.url))
             
             # 过滤条件检查
             if not matcher.is_in_template(chan.name):  # 模板过滤
@@ -234,7 +249,44 @@ async def main():
         
         classify_progress.complete()
         logger.info(f"过滤后频道数量: {len(processed_channels)}/{len(all_channels)}")
-        del all_channels  # 立即释放内存
+        
+        # 计算未分类频道总数
+        uncategorized_count = sum(len(channels) for channels in uncategorized_groups.values())
+        logger.info(f"未分类频道数量: {uncategorized_count}")
+        
+        # 保存未分类频道到文件，按分类分组
+        if uncategorized_groups:
+            # 确保目录存在
+            uncategorized_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # 按分类名称排序
+            sorted_categories = sorted(uncategorized_groups.keys())
+            
+            with open(uncategorized_path, 'w', encoding='utf-8') as f:
+                f.write("# 未分类频道列表 (自动生成)\n")
+                f.write("# 格式按原始分类分组\n\n")
+                
+                for category in sorted_categories:
+                    # 写入分类标题行
+                    f.write(f"{category},#genre#\n")
+                    
+                    # 对该分类下的频道按名称排序
+                    channels = sorted(uncategorized_groups[category], key=lambda x: x[0])
+                    
+                    # 写入该分类下的所有频道
+                    for name, url in channels:
+                        # 确保名称没有逗号（替换为全角逗号）
+                        name = name.replace(',', '，')
+                        f.write(f"{name},{url}\n")
+                    
+                    # 添加空行分隔不同分类
+                    f.write("\n")
+            
+            logger.info(f"📝📝📝📝 未分类频道已保存到: {uncategorized_path}")
+        else:
+            logger.info("✅ 所有频道均已分类，无未分类频道")
+        
+        del all_channels, uncategorized_groups  # 立即释放内存
         gc.collect()
         
         # 按模板排序并优先白名单频道
@@ -268,7 +320,11 @@ async def main():
         # 写入失败的 URL
         if failed_urls:
             failed_urls_path = Path(config.get('PATHS', 'failed_urls_path', fallback='config/failed_urls.txt'))
+            # 确保目录存在
+            failed_urls_path.parent.mkdir(parents=True, exist_ok=True)
+            
             with open(failed_urls_path, 'w', encoding='utf-8') as f:
+                f.write("# 测速失败的URL列表 (自动生成)\n")
                 for url in failed_urls:
                     f.write(f"{url}\n")
             logger.info(f"📝📝📝📝 测速失败的 URL 已写入: {failed_urls_path}")

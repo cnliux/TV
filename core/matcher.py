@@ -17,6 +17,7 @@ class AutoCategoryMatcher:
         self.template_path = template_path
         self.config = config
         self.enable_debug = config.getboolean('MATCHER', 'enable_debug_classification', fallback=False) if config else False
+        self.enable_space_clean = config.getboolean('MATCHER', 'enable_space_clean', fallback=True) if config else True
         
         # 初始化缓存和统计
         self.normalize_cache = {}
@@ -36,6 +37,21 @@ class AutoCategoryMatcher:
         
         if self.enable_debug:
             logger.info("✅ 分类调试模式已启用")
+        if self.enable_space_clean:
+            logger.info("✅ 频道名空格清理功能已启用")
+
+    def _clean_channel_name(self, name: str) -> str:
+        """清理频道名称（处理空格和特殊字符）"""
+        if not self.enable_space_clean:
+            return name
+            
+        # 1. 去除首尾空格
+        cleaned = re.sub(r'^\s+|\s+$', '', name)
+        # 2. 合并中间多余空格
+        cleaned = re.sub(r'\s+', ' ', cleaned)
+        # 3. 替换常见特殊字符
+        cleaned = cleaned.replace('_', ' ').replace('-', ' ')
+        return cleaned
 
     def is_in_template(self, channel_name: str) -> bool:
         """检查频道是否在模板中（新增方法）"""
@@ -122,7 +138,10 @@ class AutoCategoryMatcher:
         """匹配频道分类（带详细调试输出）"""
         start_time = time.perf_counter()
         
-        # 缓存检查
+        # 清理频道名称
+        clean_name = self._clean_channel_name(channel_name)
+        
+        # 缓存检查（使用原始名称）
         if channel_name in self.match_cache:
             self.cache_stats['hits'] += 1
             return self.match_cache[channel_name]
@@ -130,20 +149,19 @@ class AutoCategoryMatcher:
         self.cache_stats['misses'] += 1
         
         if self.enable_debug:
-            logger.debug(f"🔍 开始匹配频道: {channel_name}")
+            logger.debug(f"🔍🔍 开始匹配频道: '{channel_name}' (清理后: '{clean_name}')")
         
-        # 详细记录分类匹配过程
+        # 使用清理后的名称进行匹配
         for category, patterns in self.categories.items():
             for pattern in patterns:
                 try:
-                    if pattern.search(channel_name):
+                    if pattern.search(clean_name):  # 使用清理后的名称
                         if self.enable_debug:
-                            logger.debug(f"  匹配成功: {channel_name} -> {category} (规则: {pattern.pattern})")
+                            logger.debug(f"  匹配成功: '{clean_name}' -> {category} (规则: {pattern.pattern})")
                         
-                        # 更新缓存
+                        # 更新缓存（使用原始名称）
                         self.match_cache[channel_name] = category
                         
-                        # 更新性能统计
                         end_time = time.perf_counter()
                         self.performance_stats['match_time'] += (end_time - start_time)
                         
@@ -169,16 +187,11 @@ class AutoCategoryMatcher:
         
         self.cache_stats['misses'] += 1
         
-        name = channel_name.strip()
+        # 清理频道名称
+        clean_name = self._clean_channel_name(channel_name)
         
-        # 去除后缀
-        for suffix in self.suffixes:
-            if name.endswith(suffix):
-                name = name[:-len(suffix)]
-                break  # 只去除一个后缀
-                
         # 应用名称映射（使用小写键）
-        normalized_name = self.name_mapping.get(name.lower(), name)
+        normalized_name = self.name_mapping.get(clean_name.lower(), clean_name)
         
         # 更新缓存和性能统计
         self.normalize_cache[channel_name] = normalized_name
@@ -207,7 +220,7 @@ class AutoCategoryMatcher:
         threads = self.config.getint('PERFORMANCE', 'classification_threads', fallback=4) if self.config else 4
         batch_size = self.config.getint('PERFORMANCE', 'classification_batch_size', fallback=2000) if self.config else 2000
         
-        logger.info(f"🔁 启动并行分类处理: 总数={total}, 线程数={threads}, 批次大小={batch_size}")
+        logger.info(f"🔁🔁 启动并行分类处理: 总数={total}, 线程数={threads}, 批次大小={batch_size}")
         
         results = {}
         batches = [channel_names[i:i+batch_size] for i in range(0, total, batch_size)]
@@ -301,7 +314,7 @@ class AutoCategoryMatcher:
         total = hits + misses
         hit_rate = (hits / total * 100) if total > 0 else 0
         
-        logger.info("📊 缓存统计:")
+        logger.info("📊📊 缓存统计:")
         logger.info(f"  总请求: {total}")
         logger.info(f"  命中: {hits} ({hit_rate:.1f}%)")
         logger.info(f"  未命中: {misses}")
@@ -314,7 +327,7 @@ class AutoCategoryMatcher:
         total_channels = self.performance_stats['total_channels']
         channels_per_sec = total_channels / total_time if total_time > 0 else 0
         
-        logger.info("🚀 性能报告:")
+        logger.info("🚀🚀 性能报告:")
         logger.info(f"  处理频道总数: {total_channels}")
         logger.info(f"  总处理时间: {total_time:.4f}秒")
         logger.info(f"  平均速度: {channels_per_sec:.0f} 频道/秒")

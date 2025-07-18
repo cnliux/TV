@@ -2,12 +2,8 @@ name: 每日更新
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # 每天 3 点触发
-      runs-on: ubuntu-latest
-      env:
-        TZ: Asia/Shanghai  # 设置时区为北京时间
-  # 手动触发
-  workflow_dispatch:
+    - cron: '0 19 * * *'  # 每天 19:00 UTC 触发
+  workflow_dispatch:  # 手动触发
 
 jobs:
   run-and-commit:

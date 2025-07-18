@@ -113,7 +113,7 @@ async def main():
         config = configparser.ConfigParser()
         config_path = Path('config/config.ini')
         if not config_path.exists():
-            raise FileNotFoundError(f"❌ 配置文件不存在: {config_path}")
+            raise FileNotFoundError(f"❌❌ 配置文件不存在: {config_path}")
         config.read(config_path, encoding='utf-8')
         
         # 设置日志
@@ -155,9 +155,9 @@ async def main():
         
         # 检查文件是否存在
         if not urls_path.exists():
-            raise FileNotFoundError(f"❌ 缺少订阅源文件: {urls_path}")
+            raise FileNotFoundError(f"❌❌ 缺少订阅源文件: {urls_path}")
         if not templates_path.exists():
-            raise FileNotFoundError(f"❌ 缺少分类模板文件: {templates_path}")
+            raise FileNotFoundError(f"❌❌ 缺少分类模板文件: {templates_path}")
         
         # 阶段1: 获取订阅源
         with open(urls_path, 'r', encoding='utf-8') as f:
@@ -167,7 +167,7 @@ async def main():
             timeout=fetcher_timeout,
             concurrency=fetcher_concurrency
         )
-        fetch_progress = SmartProgress(len(urls), "🌐 获取源数据")
+        fetch_progress = SmartProgress(len(urls), "🌐🌐 获取源数据")
         contents = await fetcher.fetch_all(urls, fetch_progress.update)
         fetch_progress.complete()
         
@@ -175,7 +175,7 @@ async def main():
         parser = PlaylistParser(config)
         valid_contents = [c for c in contents if c and c.strip()]
         all_channels = []
-        parse_progress = SmartProgress(len(valid_contents), "🔍 解析频道")
+        parse_progress = SmartProgress(len(valid_contents), "🔍🔍 解析频道")
         
         for content in valid_contents:
             channels = list(parser.parse(content))
@@ -189,7 +189,7 @@ async def main():
         
         # 阶段3: 智能分类与过滤
         matcher = AutoCategoryMatcher(str(templates_path), config)
-        classify_progress = SmartProgress(len(all_channels), "🏷 分类频道")
+        classify_progress = SmartProgress(len(all_channels), "🏷🏷 分类频道")
         
         # 批量分类
         channel_names = [c.name for c in all_channels]
@@ -204,10 +204,14 @@ async def main():
             # 应用分类结果
             chan.category = category_mapping[chan.name]
             
+            # 关键修改：应用名称规范化
+            normalized_name = matcher.normalize_channel_name(chan.name)
+            chan.name = normalized_name
+            
             # 记录未分类频道（带原始分类）
             if chan.category == "未分类":
                 clean_name = re.sub(r'[\n\r\t]', ' ', chan.name).strip()
-                uncategorized_groups[chan.original_category].append((clean_name, chan.url))
+                uncategorized_groups[chan.original_category].append((clean_name, chan.url)
                 if matcher.enable_debug:
                     logger.debug(f"未分类频道: {chan.name} (原分类: {chan.original_category})")
             
@@ -242,7 +246,7 @@ async def main():
                     for name, url in sorted(uncategorized_groups[category]):
                         f.write(f"{name.replace(',', '，')},{url}\n")
                     f.write("\n")
-            logger.info(f"📝 未分类频道已保存到: {uncategorized_path}")
+            logger.info(f"📝📝 未分类频道已保存到: {uncategorized_path}")
         else:
             logger.info("✅ 所有频道均已分类")
         
@@ -258,7 +262,7 @@ async def main():
         
         batch_size = 500
         total_channels = len(sorted_channels)
-        test_progress = SmartProgress(total_channels, "⏱ 测速测试")
+        test_progress = SmartProgress(total_channels, "⏱⏱⏱ 测速测试")
         failed_urls = set()
         
         for i in range(0, total_channels, batch_size):
@@ -277,7 +281,7 @@ async def main():
                 f.write("# 测速失败的URL列表\n")
                 for url in failed_urls:
                     f.write(f"{url}\n")
-            logger.info(f"📝 测速失败URL已保存: {failed_urls_path}")
+            logger.info(f"📝📝 测速失败URL已保存: {failed_urls_path}")
         
         # 阶段5: 结果导出
         exporter = ResultExporter(
@@ -287,18 +291,18 @@ async def main():
             config=config,
             matcher=matcher
         )
-        export_progress = SmartProgress(1, "💾 导出结果")
+        export_progress = SmartProgress(1, "💾💾 导出结果")
         exporter.export(sorted_channels, export_progress.update)
         export_progress.complete()
         
         # 输出摘要
         online = sum(1 for c in sorted_channels if c.status == 'online')
         logger.info(f"✅ 任务完成！在线频道: {online}/{len(sorted_channels)}")
-        logger.info(f"📂 输出目录: {output_dir.resolve()}")
+        logger.info(f"📂📂 输出目录: {output_dir.resolve()}")
     
     except Exception as e:
-        logger.error(f"❌ 发生错误: {str(e)}", exc_info=True)
-        logger.info("💡 排查建议:")
+        logger.error(f"❌❌ 发生错误: {str(e)}", exc_info=True)
+        logger.info("💡💡 排查建议:")
         logger.info("1. 检查config目录下的文件是否存在")
         logger.info("2. 确认订阅源URL可访问")
         logger.info("3. 验证分类模板格式是否正确")
@@ -311,4 +315,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:
-        logging.error(f"❌ 全局异常: {str(e)}", exc_info=True)
+        logging.error(f"❌❌ 全局异常: {str(e)}", exc_info=True)

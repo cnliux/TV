@@ -2,8 +2,9 @@
 
 import aiohttp
 import asyncio
-from typing import List, Callable
 import logging
+from typing import List, Callable
+import re
 from functools import lru_cache
 
 logger = logging.getLogger(__name__)
@@ -25,20 +26,20 @@ class SourceFetcher:
 
     async def _fetch_with_retry(self, session: aiohttp.ClientSession, url: str, progress_cb: Callable) -> str:
         """带重试机制的单次请求处理"""
-        for attempt in range(self.retries):
+        for attempt in range(self.retries + 1):
             try:
                 result = await self._fetch(session, url)
                 if result:
-                    logger.info(f"✅ 成功获取: {url}")
+                    logger.debug(f"✅ 成功获取: {url}")
                 else:
                     logger.warning(f"⚠️ 获取成功但内容为空: {url}")
                 return result
             except Exception as e:
-                logger.error(f"⚠️ 获取失败 (尝试 {attempt+1}/{self.retries}): {url} - {str(e)}")
-                if attempt == self.retries - 1:
-                    logger.error(f"❌❌ 最终失败: {url}")
+                logger.warning(f"⚠️ 获取失败 (尝试 {attempt+1}/{self.retries+1}): {url} - {str(e)}")
+                if attempt == self.retries:
+                    logger.error(f"❌ 最终失败: {url}")
                     return ""
-                await asyncio.sleep(1)  # 指数退避
+                await asyncio.sleep(1 + attempt)  # 指数退避
             finally:
                 progress_cb()
 
@@ -59,7 +60,7 @@ class SourceFetcher:
                     content_type = resp.headers.get('Content-Type', '')
                     encoding = self._detect_encoding(content_type, raw_content)
                     
-                    return raw_content.decode(encoding)
+                    return raw_content.decode(encoding, errors='replace')
             except Exception as e:
                 raise e
 
@@ -67,7 +68,10 @@ class SourceFetcher:
     def _detect_encoding(self, content_type: str, raw_content: bytes) -> str:
         """检测内容编码（带缓存）"""
         if 'charset=' in content_type:
-            return content_type.split('charset=')[-1].strip().lower()
+            # 从Content-Type提取编码
+            charset_match = re.search(r'charset=([\w-]+)', content_type, re.IGNORECASE)
+            if charset_match:
+                return charset_match.group(1).lower()
         
         # 尝试常见编码
         for enc in self.common_encodings:

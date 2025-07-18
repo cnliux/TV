@@ -16,7 +16,7 @@ class Channel:
 
     # 类变量
     IPV4_PATTERN: ClassVar[re.Pattern] = re.compile(r'https?://(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-zA-Z0-9.-]+)(?::\d+)?')
-    IPV6_PATTERN: ClassVar[re.Pattern] = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[\w:]+:[a-fA-F0-9:]+)')
+    IPV6_PATTERN: ClassVar[re.Pattern] = re.compile(r'https?://(?:\[[a-fA-F0-9:]+\]|[a-fA-F0-9:]+(?!\d))')
 
     @classmethod
     def classify_ip_type(cls, url: str) -> str:

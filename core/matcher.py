@@ -149,7 +149,7 @@ class AutoCategoryMatcher:
         self.cache_stats['misses'] += 1
         
         if self.enable_debug:
-            logger.debug(f"🔍🔍 开始匹配频道: '{channel_name}' (清理后: '{clean_name}')")
+            logger.debug(f"🔍🔍🔍🔍 开始匹配频道: '{channel_name}' (清理后: '{clean_name}')")
         
         # 使用清理后的名称进行匹配
         for category, patterns in self.categories.items():
@@ -220,7 +220,7 @@ class AutoCategoryMatcher:
         threads = self.config.getint('PERFORMANCE', 'classification_threads', fallback=4) if self.config else 4
         batch_size = self.config.getint('PERFORMANCE', 'classification_batch_size', fallback=2000) if self.config else 2000
         
-        logger.info(f"🔁🔁 启动并行分类处理: 总数={total}, 线程数={threads}, 批次大小={batch_size}")
+        logger.info(f"🔁🔁🔁🔁 启动并行分类处理: 总数={total}, 线程数={threads}, 批次大小={batch_size}")
         
         results = {}
         batches = [channel_names[i:i+batch_size] for i in range(0, total, batch_size)]
@@ -314,7 +314,7 @@ class AutoCategoryMatcher:
         total = hits + misses
         hit_rate = (hits / total * 100) if total > 0 else 0
         
-        logger.info("📊📊 缓存统计:")
+        logger.info("📊📊📊📊 缓存统计:")
         logger.info(f"  总请求: {total}")
         logger.info(f"  命中: {hits} ({hit_rate:.1f}%)")
         logger.info(f"  未命中: {misses}")
@@ -327,7 +327,7 @@ class AutoCategoryMatcher:
         total_channels = self.performance_stats['total_channels']
         channels_per_sec = total_channels / total_time if total_time > 0 else 0
         
-        logger.info("🚀🚀 性能报告:")
+        logger.info("🚀🚀🚀🚀 性能报告:")
         logger.info(f"  处理频道总数: {total_channels}")
         logger.info(f"  总处理时间: {total_time:.4f}秒")
         logger.info(f"  平均速度: {channels_per_sec:.0f} 频道/秒")

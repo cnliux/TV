@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-core 模块初始化文件
-导出所有核心类供外部使用
-"""
+# core/__init__.py
 
 # 基础模块
 from .models import Channel

@@ -204,14 +204,13 @@ async def main():
             # 应用分类结果
             chan.category = category_mapping[chan.name]
             
-            # 关键修改：应用名称规范化
+            # 应用名称规范化
             normalized_name = matcher.normalize_channel_name(chan.name)
             chan.name = normalized_name
             
-            # 记录未分类频道（带原始分类）
             if chan.category == "未分类":
                 clean_name = re.sub(r'[\n\r\t]', ' ', chan.name).strip()
-                uncategorized_groups[chan.original_category].append((clean_name, chan.url)
+                uncategorized_groups[chan.original_category].append((clean_name, chan.url))
                 if matcher.enable_debug:
                     logger.debug(f"未分类频道: {chan.name} (原分类: {chan.original_category})")
             

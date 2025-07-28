@@ -1,9 +1,10 @@
-# core/tester.py（修改后的完整实现）
+# core/tester.py（修复版）
 import asyncio
 import aiohttp
 from typing import List, Callable, Set
 from .models import Channel
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class SpeedTester:
         """测试单个频道（添加失败URL收集）"""
         if self._is_in_white_list(channel, white_list):
             channel.status = 'online'
-            progress_cb()
+            progress_cb()  # 正确调用进度回调
             return
 
         async with self.semaphore:
@@ -45,20 +46,22 @@ class SpeedTester:
                 if success:
                     self.success_count += 1
                 else:
-                    # 关键修复：添加失败URL到集合
+                    # 添加失败URL到集合
                     failed_urls.add(channel.url)
+                    logger.debug(f"测速失败: {channel.url}")
             except Exception as e:
-                # 关键修复：添加异常URL到集合
+                # 添加异常URL到集合
                 failed_urls.add(channel.url)
                 if self.enable_logging:
                     logger.warning(f"⚠️ 测速异常: {channel.url} - {str(e)}")
             finally:
-                progress_ccb()
+                progress_cb()  # 正确调用进度回调
 
     async def _perform_test(self, session: aiohttp.ClientSession, channel: Channel) -> bool:
         """执行测速核心逻辑"""
         try:
             headers = {'User-Agent': 'Mozilla/5.0'}
+            start_time = time.time()
             async with session.get(channel.url, headers=headers, timeout=self.timeout) as resp:
                 if resp.status != 200:
                     channel.status = 'offline'
@@ -66,11 +69,19 @@ class SpeedTester:
                 
                 # 简化的测速逻辑
                 content = await resp.read()
-                channel.status = 'online'
+                download_speed = len(content) / (time.time() - start_time) / 1024  # KB/s
                 
-                if self.enable_logging:
-                    logger.info(f"✅ 测速成功: {channel.url}")
-                return True
+                if download_speed >= self.min_download_speed:
+                    channel.status = 'online'
+                    channel.download_speed = download_speed
+                    if self.enable_logging:
+                        logger.info(f"✅ 测速成功: {channel.url} - 速度: {download_speed:.2f} KB/s")
+                    return True
+                else:
+                    channel.status = 'offline'
+                    if self.enable_logging:
+                        logger.warning(f"⚠️ 速度过低: {channel.url} - {download_speed:.2f} KB/s < {self.min_download_speed} KB/s")
+                    return False
                 
         except Exception as e:
             channel.status = 'offline'

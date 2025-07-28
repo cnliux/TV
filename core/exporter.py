@@ -1,4 +1,4 @@
-# core/exporter.py
+# core/exporter.py（完整修复版）
 
 import logging
 from pathlib import Path
@@ -20,6 +20,7 @@ class ResultExporter:
         self.template_path = template_path
         self.config = config
         self.matcher = matcher
+        self.failed_urls = set()  # 添加failed_urls属性初始化
         self._ensure_dirs()
 
     def _ensure_dirs(self):
@@ -120,7 +121,7 @@ class ResultExporter:
                 f.write(f'#EXTINF:-1 tvg-name="{channel.name}" group-title="{channel.category}" tvg-logo="{logo_url}", {channel.name}\n')
                 f.write(f"{channel.url}\n")
                 count += 1
-        logger.info(f"📄📄 生成的 M3U 文件: {file_path.resolve()}，包含 {count} 个频道")
+        logger.info(f"📄📄📄📄 生成的 M3U 文件: {file_path.resolve()}，包含 {count} 个频道")
 
     def _export_txt(self, channels: List[Channel], file_path: Path):
         """导出TXT文件"""
@@ -139,7 +140,7 @@ class ResultExporter:
                     current_category = channel.category
                 f.write(f"{channel.name},{channel.url}\n")
                 count += 1
-        logger.info(f"📄📄 生成的 TXT 文件: {file_path.resolve()}，包含 {count} 个频道")
+        logger.info(f"📄📄📄📄 生成的 TXT 文件: {file_path.resolve()}，包含 {count} 个频道")
 
     def _export_channels(self, channels: List[Channel], type_name: str):
         """导出指定类型的文件"""
@@ -175,8 +176,8 @@ class ResultExporter:
                 f_m3u.write(f"{channel.url}\n")
                 m3u_count += 1
 
-        logger.info(f"📄📄 生成的 {type_name} 地址文件: {(self.output_dir / output_txt).resolve()}，包含 {txt_count} 个频道")
-        logger.info(f"📄📄 生成的 {type_name} M3U 文件: {(self.output_dir / output_m3u).resolve()}，包含 {m3u_count} 个频道")
+        logger.info(f"📄📄📄📄 生成的 {type_name} 地址文件: {(self.output_dir / output_txt).resolve()}，包含 {txt_count} 个频道")
+        logger.info(f"📄📄📄📄 生成的 {type_name} M3U 文件: {(self.output_dir / output_m3u).resolve()}，包含 {m3u_count} 个频道")
 
     def _get_m3u_header(self) -> str:
         """生成M3U文件头部"""
@@ -185,7 +186,11 @@ class ResultExporter:
 
     def _export_uncategorized_channels(self, channels: List[Channel]):
         """导出未分类频道到未分类文件（按原始分类分组）"""
+        # 获取配置文件中的路径
         uncategorized_path = Path(self.config.get('PATHS', 'uncategorized_channels_path', fallback='config/uncategorized_channels.txt'))
+        
+        # 确保父目录存在
+        uncategorized_path.parent.mkdir(parents=True, exist_ok=True)
         
         # 筛选未分类且在线的频道
         uncategorized_channels = [c for c in channels if c.category == "未分类" and c.status == 'online']
@@ -203,21 +208,16 @@ class ResultExporter:
                 grouped_channels[group] = []
             grouped_channels[group].append(channel)
         
-        # 添加调试日志
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("===== 未分类频道原始分类调试信息 =====")
-            logger.debug(f"未分类频道总数: {len(uncategorized_channels)}")
-            
-            # 打印前10个频道的详细信息
-            for i, chan in enumerate(uncategorized_channels[:10]):
-                logger.debug(f"频道 {i+1}: 名称='{chan.name}', 当前分类='{chan.category}', 原始分类='{chan.original_category}'")
-            
-            logger.debug("===== 分组统计 =====")
-            for category, chans in grouped_channels.items():
-                logger.debug(f"分组: '{category}', 频道数量: {len(chans)}")
+        # 添加调试日志 - 非常重要
+        logger.debug("===== 未分类频道原始分类调试信息 =====")
+        logger.debug(f"未分类频道总数: {len(uncategorized_channels)}")
+        logger.debug("示例频道:")
+        for i, chan in enumerate(uncategorized_channels[:5]):
+            logger.debug(f"  频道 {i+1}: 名称='{chan.name}', 当前分类='{chan.category}', 原始分类='{chan.original_category}'")
+        logger.debug(f"分组数量: {len(grouped_channels)}")
         
         # 导出未分类频道到文件
-        with open(self.output_dir / uncategorized_path, 'w', encoding='utf-8') as f:
+        with open(uncategorized_path, 'w', encoding='utf-8') as f:
             f.write("# 未分类频道列表（按原始分类分组）\n")
             f.write("# 这些频道未匹配到任何分类模板\n\n")
             
@@ -236,4 +236,4 @@ class ResultExporter:
         
         count = len(uncategorized_channels)
         groups = len(grouped_channels)
-        logger.info(f"📄📄 生成的未分类频道文件: {(self.output_dir / uncategorized_path).resolve()}，包含 {count} 个频道，按 {groups} 个原始分类分组")
+        logger.info(f"📄📄📄📄 生成的未分类频道文件: {uncategorized_path.resolve()}，包含 {count} 个频道，按 {groups} 个原始分类分组")

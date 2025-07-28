@@ -281,18 +281,21 @@ async def main():
                 for url in failed_urls:
                     f.write(f"{url}\n")
             logger.info(f"📝📝 测速失败URL已保存: {failed_urls_path}")
-        
-        # 阶段5: 结果导出
-        exporter = ResultExporter(
-            output_dir=str(output_dir),
-            enable_history=enable_history,
-            template_path=str(templates_path),
-            config=config,
-            matcher=matcher
-        )
-        export_progress = SmartProgress(1, "💾💾 导出结果")
-        exporter.export(sorted_channels, export_progress.update)
-        export_progress.complete()
+
+            # 阶段5: 结果导出
+            exporter = ResultExporter(
+                output_dir=str(output_dir),
+                enable_history=enable_history,
+                template_path=str(templates_path),
+                config=config,
+                matcher=matcher
+            )
+
+            # 将测速失败URL集合传递给exporter
+            exporter.failed_urls = failed_urls  # 添加这行
+
+            export_progress = SmartProgress(1, "💾💾💾💾 导出结果")
+            exporter.export(sorted_channels, export_progress.update)
         
         # 输出摘要
         online = sum(1 for c in sorted_channels if c.status == 'online')

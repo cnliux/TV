@@ -15,11 +15,14 @@
 
 ## 📌 项目概述
 自动化IPTV频道管理解决方案，支持：
-- 多源订阅抓取
-- 智能规则分类
-- 实时速度测试
-- 多格式导出
-
+- ​多源数据获取​：并行抓取多个订阅源
+- ​智能分类系统​：基于正则规则自动分类频道
+- ​动态测速引擎​：多线程测试频道可用性和速度
+- ​协议识别​：自动区分IPv4/IPv6频道
+- ​黑白名单过滤​：自定义频道过滤规则
+- ​多格式导出​：支持M3U、TXT、CSV等格式
+- ​历史记录​：可选启用带时间戳的历史记录
+- ​性能优化​：动态进度条和批量处理机制
 ---
 
 # 🚦 使用指南
@@ -33,52 +36,25 @@
 - python main.py
 ## 📂 项目结构详解
 - project/
-- │
 - ├── core/                       # 核心功能模块
-- │   ├── __init__.py             # 模块初始化文件
-- │   ├── fetcher.py              # 订阅源抓取模块
-- │   │   ├── SourceFetcher       # 多线程 URL 抓取器
-- │   │   └── 支持超时/重试机制
-- │   │
-- │   ├── parser.py               # 播放列表解析器
-- │   │   ├── PlaylistParser      # 支持 M3U/EXTINF 格式
-- │   │   └── URL 参数过滤
-- │   │
+- │   ├── fetcher.py              # 订阅源抓取
+- │   ├── parser.py               # 播放列表解析
 - │   ├── matcher.py              # 智能分类引擎
-- │   │   ├── AutoCategoryMatcher # 自动分类匹配器
-- │   │   ├── 正则规则匹配
-- │   │   └── 频道名称标准化
-- │   │
-- │   ├── tester.py               # 速度测试模块
-- │   │   ├── SpeedTester         # 多线程测速器
-- │   │   └── 白名单跳过机制
-- │   │
-- │   ├── exporter.py             # 结果导出器
-- │   │   ├── ResultExporter      # 导出结果
-- │   │   ├── 支持 M3U/TXT/CSV 格式
-- │   │   └── IP 版本分类导出
-- │   │
-- │   └── models.py               # 数据模型
-- │       └── Channel 类定义
-- │
+- │   ├── tester.py               # 速度测试
+- │   ├── exporter.py             # 结果导出
+- │   ├── models.py               # 数据模型
+- │   └── progress.py             # 智能进度系统
 - ├── config/                     # 配置目录
 - │   ├── config.ini              # 主配置文件
-- │   │   ├── [MAIN] 基础设置
-- │   │   ├── [FETCHER] 抓取参数
-- │   │   ├── [TESTER] 测速设置
-- │   │   └── [DEBUG] 调试选项
-- │   │
 - │   ├── urls.txt                # 订阅源列表
 - │   ├── templates.txt           # 分类规则模板
-- │   ├── blacklist.txt           # 黑名单数据
-- │   └── whitelist.txt           # 白名单数据
-- │
+- │   ├── blacklist.txt           # 黑名单
+- │   └── whitelist.txt           # 白名单
 - ├── outputs/                    # 生成文件目录
-- │   ├── ipv4.m3u                # IPv4 频道列表
-- │   ├── ipv6.m3u                # IPv6 频道列表
+- │   ├── ipv4.m3u                # IPv4频道列表
+- │   ├── ipv6.m3u                # IPv6频道列表
 - │   ├── all.txt                 # 合并文本格式
 - │   └── history_*.csv           # 历史记录文件
-- │
 - ├── main.py                     # 程序主入口
 - ├── requirements.txt            # 依赖库清单
 - └── README.md                   # 项目文档

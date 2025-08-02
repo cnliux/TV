@@ -13,6 +13,7 @@ https://raw.githubusercontent.com/alantang1977/IPTV_SuperB/refs/heads/main/outpu
 https://raw.githubusercontent.com/big-mouth-cn/tv/refs/heads/main/iptv.m3u
 https://github.com/alantang1977/IPTV_SuperB/blob/main/output/live_ipv4.txt
 http://3501776.xyz:35455/tv.m3u
+https://raw.githubusercontent.com/ewctt/tvbox/a4043358c1eccaa618cd6b6d1e6f652014c982c1/lib/iptv.txt
 http://home.kuaidi521.com:35455/tv.m3u
 http://xiaoya.crccxw.top:35455/tv.m3u
 https://raw.githubusercontent.com/zwc456baby/iptv_alive/master/live.txt

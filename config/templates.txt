@@ -6,6 +6,7 @@
 # $ 是正则表达式的锚点，表示匹配字符串的结尾，这样可以避免 CCTV-1 被更通用的规则（如 CCTV.*）覆盖。#suffixes:高清,HD,综合去除后缀 
 #suffixes:高清,HD,
 央视频道,#genre#
+九屏直播频道|九画面
 CCTV1|CCTV-1|CCTV综合|中央电视台1|CCTV-01太原|CCTV1综合|CCTV1-标清|CCTV 1综合
 CCTV2|CCTV-2|CCTV财经|中央电视台2|CCTV-02太原|CCTV2财经|CCTV2-标清|CCTV 2财经
 CCTV3|CCTV-3|CCTV综艺|中央电视台3|CCTV-03太原|CCTV3综艺|CCTV3-标清|CCTV 3综艺
@@ -72,7 +73,14 @@ CCTV 8K
 .*卫视
 .*卫视高清
 .*卫视HD
-
+河北卫视,#genre#
+河北三农频道
+河北农民
+河北影视剧频道
+河北文旅公共
+河北杂技频道
+河北经济生活
+河北都市频道
 港·澳·台,#genre#
 翡翠台
 明珠台

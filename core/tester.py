@@ -1,7 +1,7 @@
-# core/tester.py（修复版）
+# core/tester.py
 import asyncio
 import aiohttp
-from typing import List, Callable, Set
+from typing import List, Callable, Set, Tuple  # 添加 Tuple 导入
 from .models import Channel
 import logging
 import time
@@ -9,11 +9,11 @@ import time
 logger = logging.getLogger(__name__)
 
 class SpeedTester:
-    """修复后的测速模块（添加失败URL收集）"""
+    """增强版测速模块（带详细调试日志）"""
     
     def __init__(self, timeout: float, concurrency: int, max_attempts: int,
                  min_download_speed: float, enable_logging: bool = True):
-        self.timeout = timeout
+        self.timeout = aiohttp.ClientTimeout(total=timeout)
         self.semaphore = asyncio.Semaphore(concurrency)
         self.max_attempts = max_attempts
         self.min_download_speed = min_download_speed
@@ -23,70 +23,112 @@ class SpeedTester:
 
     async def test_channels(self, channels: List[Channel], progress_cb: Callable,
                           failed_urls: Set[str], white_list: set):
-        """批量测速（修复统计逻辑）"""
+        """批量测速主方法"""
         self.total_count = len(channels)
         self.success_count = 0
         
-        async with aiohttp.ClientSession() as session:
-            tasks = [self._test_channel(session, c, progress_cb, failed_urls, white_list)
-                    for c in channels]
+        async with aiohttp.ClientSession(timeout=self.timeout) as session:
+            tasks = []
+            for channel in channels:
+                task = self._test_channel(
+                    session, channel, progress_cb, failed_urls, white_list
+                )
+                tasks.append(task)
+            
             await asyncio.gather(*tasks)
 
     async def _test_channel(self, session: aiohttp.ClientSession, channel: Channel,
                           progress_cb: Callable, failed_urls: Set[str], white_list: set):
-        """测试单个频道（添加失败URL收集）"""
+        """测试单个频道（带详细调试日志）"""
+        # 获取IP类型
+        ip_type = Channel.classify_ip_type(channel.url)
+        ipv6_match = Channel.IPV6_PATTERN.search(channel.url)
+        
         if self._is_in_white_list(channel, white_list):
             channel.status = 'online'
-            progress_cb()  # 正确调用进度回调
+            logger.debug(
+                f"DEBUG - 频道分类: {channel.name} | "
+                f"URL={channel.url} | "
+                f"类型={ip_type} | "
+                f"IPv6匹配={ipv6_match.group(0) if ipv6_match else '无'} | "
+                f"状态=白名单免测"
+            )
+            progress_cb()
             return
 
         async with self.semaphore:
             try:
-                success = await self._perform_test(session, channel)
+                success, speed, latency = await self._perform_test(session, channel)
                 if success:
                     self.success_count += 1
+                    status = 'online'
                 else:
-                    # 添加失败URL到集合
                     failed_urls.add(channel.url)
-                    logger.debug(f"测速失败: {channel.url}")
+                    status = 'offline'
+                
+                # 调试日志（精确到每个频道的测速结果）
+                logger.debug(
+                    f"DEBUG - 频道分类: {channel.name} | "
+                    f"URL={channel.url} | "
+                    f"类型={ip_type} | "
+                    f"IPv6匹配={ipv6_match.group(0) if ipv6_match else '无'} | "
+                    f"网速={speed:.2f}KB/s | "
+                    f"延迟={latency:.2f}ms | "
+                    f"状态={status}"
+                )
+                
             except Exception as e:
-                # 添加异常URL到集合
                 failed_urls.add(channel.url)
-                if self.enable_logging:
-                    logger.warning(f"⚠️ 测速异常: {channel.url} - {str(e)}")
+                logger.debug(
+                    f"DEBUG - 频道分类: {channel.name} | "
+                    f"URL={channel.url} | "
+                    f"类型={ip_type} | "
+                    f"IPv6匹配={ipv6_match.group(0) if ipv6_match else '无'} | "
+                    f"网速=0.00KB/s | "
+                    f"延迟=0.00ms | "
+                    f"状态=error({str(e)})"
+                )
             finally:
-                progress_cb()  # 正确调用进度回调
+                progress_cb()
 
-    async def _perform_test(self, session: aiohttp.ClientSession, channel: Channel) -> bool:
-        """执行测速核心逻辑"""
+    async def _perform_test(self, session: aiohttp.ClientSession, channel: Channel) -> Tuple[bool, float, float]:
+        """执行测速并返回（是否成功，速度KB/s，延迟ms）"""
         try:
             headers = {'User-Agent': 'Mozilla/5.0'}
             start_time = time.time()
-            async with session.get(channel.url, headers=headers, timeout=self.timeout) as resp:
+            
+            async with session.get(channel.url, headers=headers) as resp:
+                # 测量连接延迟
+                latency = (time.time() - start_time) * 1000  # 转换为毫秒
+                
                 if resp.status != 200:
                     channel.status = 'offline'
-                    return False
+                    return False, 0.0, latency
                 
-                # 简化的测速逻辑
+                # 测量下载速度
                 content = await resp.read()
-                download_speed = len(content) / (time.time() - start_time) / 1024  # KB/s
+                download_time = time.time() - start_time
+                speed = len(content) / download_time / 1024  # KB/s
                 
-                if download_speed >= self.min_download_speed:
+                if speed >= self.min_download_speed:
                     channel.status = 'online'
-                    channel.download_speed = download_speed
-                    if self.enable_logging:
-                        logger.info(f"✅ 测速成功: {channel.url} - 速度: {download_speed:.2f} KB/s")
-                    return True
+                    channel.response_time = latency
+                    channel.download_speed = speed
+                    return True, speed, latency
                 else:
                     channel.status = 'offline'
-                    if self.enable_logging:
-                        logger.warning(f"⚠️ 速度过低: {channel.url} - {download_speed:.2f} KB/s < {self.min_download_speed} KB/s")
-                    return False
+                    return False, speed, latency
                 
         except Exception as e:
             channel.status = 'offline'
-            return False
+            raise e
 
     def _is_in_white_list(self, channel: Channel, white_list: set) -> bool:
-        """检查白名单"""
-        return any(w in channel.url or w == channel.name for w in white_list)
+        """检查白名单（不区分大小写）"""
+        channel_url_lower = channel.url.lower()
+        channel_name_lower = channel.name.lower()
+        return any(
+            w.lower() in channel_url_lower or 
+            w.lower() == channel_name_lower 
+            for w in white_list
+        )

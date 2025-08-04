@@ -130,7 +130,7 @@ class SpeedTester:
                         return True, 0.0, latency
                     else:
                         channel.status = 'offline'
-                        return False， 0.0, latency
+                        return False, 0.0, latency
                 
             # ==== 标准HTTP协议处理 ====
             else:
@@ -140,7 +140,7 @@ class SpeedTester:
                     
                     if resp.status != 200:
                         channel.status = 'offline'
-                        return False， 0.0, latency
+                        return False, 0.0, latency
                     
                     # 测量下载速度
                     content = await resp.read()

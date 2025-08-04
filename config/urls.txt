@@ -5,6 +5,7 @@ https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u
 https://raw.githubusercontent.com/vbskycn/iptv/refs/heads/master/tv/hd.txt
 https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/refs/heads/main/bbxx_lite.txt
 https://fastly.jsdelivr.net/gh/Wirili/IPTV@main/live.txt
+https://raw.githubusercontent.com/q1017673817/iptvz/refs/heads/main/zubo_all.txt
 https://raw.githubusercontent.com/vbskycn/iptv/refs/heads/master/tv/iptv6.txt
 https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u
 https://raw.githubusercontent.com/TianmuTNT/iptv/refs/heads/main/iptv.txt

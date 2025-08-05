@@ -202,7 +202,7 @@ class SpeedTester:
                     latency = (time.time() - start_time) * 1000
                     if 200 <= resp.status < 400:
                         return True, 0.0, latency
-                    return False， 0.0, latency
+                    return False, 0.0, latency
                 
             # 标准HTTP协议处理
             else:

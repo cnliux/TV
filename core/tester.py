@@ -150,10 +150,10 @@ class SpeedTester:
                 
                 if success:
                     self.success_count += 1
-                    status = 'online'
+                    channel.status = 'online'  # 设置频道状态
                 else:
                     failed_urls.add(channel.url)
-                    status = 'offline'
+                    channel.status = 'offline'  # 设置频道状态
                 
                 # 调试日志
                 if self.enable_logging:
@@ -163,12 +163,13 @@ class SpeedTester:
                         f"协议: {'RTP/UDP' if is_rtp_udp else 'HTTP'} | "
                         f"延迟: {latency:.2f}ms | "
                         f"速度: {speed:.2f}KB/s | "
-                        f"状态: {status}"
+                        f"状态: {channel.status}"
                     )
                     logger.debug(log_msg)
                 
             except Exception as e:
                 failed_urls.add(channel.url)
+                channel.status = 'offline'  # 设置频道状态
                 if self.enable_logging:
                     logger.error(f"测试出错: {channel.name} - {str(e)}")
             finally:
@@ -177,6 +178,7 @@ class SpeedTester:
     async def _perform_test(self, session: aiohttp.ClientSession, 
                           channel: Channel, is_rtp_udp: bool) -> Tuple[bool, float, float]:
         """执行测速并返回结果"""
+        proxy_session = 无
         try:
             headers = {'User-Agent': 'Mozilla/5.0'}
             start_time = time.time()
@@ -186,12 +188,13 @@ class SpeedTester:
                 proxy = random.choice(self.proxy_list)
                 connector = aiohttp.ProxyConnector(proxy=proxy)
                 proxy_session = aiohttp.ClientSession(connector=connector, timeout=self.timeout)
+                use_session = proxy_session
             else:
-                proxy_session = session
+                use_session = session
             
             # RTP/UDP协议特殊处理
             if is_rtp_udp:
-                async with proxy_session.head(
+                async with use_session.head(
                     channel.url,
                     headers=headers,
                     timeout=aiohttp.ClientTimeout(total=self.udp_timeout)
@@ -199,11 +202,11 @@ class SpeedTester:
                     latency = (time.time() - start_time) * 1000
                     if 200 <= resp.status < 400:
                         return True, 0.0, latency
-                    return False, 0.0, latency
+                    return False， 0.0, latency
                 
             # 标准HTTP协议处理
             else:
-                async with proxy_session.get(channel.url, headers=headers) as resp:
+                async with use_session.get(channel.url, headers=headers) as resp:
                     latency = (time.time() - start_time) * 1000
                     if resp.status != 200:
                         return False, 0.0, latency
@@ -217,12 +220,12 @@ class SpeedTester:
                     return False, speed, latency
                 
         except asyncio.TimeoutError:
-            return False， 0.0, self.timeout * 1000
+            return False, 0.0, self.timeout.total * 1000
         except Exception:
             return False, 0.0, 0.0
         finally:
             # 关闭代理会话（如果是独立创建的）
-            if self.enable_proxy 和 self.proxy_list:
+            if proxy_session:
                 await proxy_session.close()
 
     def _is_in_white_list(self, channel: Channel, white_list: set) -> bool:
@@ -230,7 +233,7 @@ class SpeedTester:
         channel_url = channel.url.lower()
         channel_name = channel.name.lower()
         return any(
-            w.lower() 在 channel_url 或 
-            w.lower() == channel_name 
+            (w.lower() in channel_url) or 
+            (w.lower() == channel_name)
             for w in white_list
         )

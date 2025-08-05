@@ -192,7 +192,7 @@ class SpeedTester:
             # RTP/UDP协议特殊处理
             if is_rtp_udp:
                 async with proxy_session.head(
-                    channel.url，
+                    channel.url,
                     headers=headers,
                     timeout=aiohttp.ClientTimeout(total=self.udp_timeout)
                 ) as resp:

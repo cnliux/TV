@@ -188,6 +188,9 @@ Tennis Channel US
 US MTV LIVE
 viuTV
 🎬电影频道,#genre#
+.*电影.*
+.*影院
+.*剧场
 CHC家庭影院
 CHC动作电影
 CHC高清电影
@@ -331,9 +334,6 @@ CCTV-15
 音乐调频广播
 
 🏛经典剧场,#genre#
-.*电影.*
-.*影院
-.*剧场
 笑傲江湖.*
 天龙八部.*
 鹿鼎记.*

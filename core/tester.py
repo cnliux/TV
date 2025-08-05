@@ -1,32 +1,68 @@
 # core/tester.py
 import asyncio
 import aiohttp
-from typing import List, Callable, Set, Tuple
-from .models import Channel
-import logging
+import random
 import time
 import re
+import logging
+from typing import List, Callable, Set, Tuple
+from collections import defaultdict
+from .models import Channel
+from configparser import ConfigParser
+import urllib.parse
 
 logger = logging.getLogger(__name__)
 
 class SpeedTester:
-    """增强版测速模块（带详细调试日志和RTP/UDP特殊处理）"""
+    """增强版测速模块（带IP封禁防护）"""
     
     def __init__(self, timeout: float, concurrency: int, max_attempts: int,
-                 min_download_speed: float, enable_logging: bool = True):
+                 min_download_speed: float, enable_logging: bool = True,
+                 config: ConfigParser = None):
         self.timeout = aiohttp.ClientTimeout(total=timeout)
-        self.semaphore = asyncio.Semaphore(concurrency)
+        self.concurrency = concurrency
         self.max_attempts = max_attempts
         self.min_download_speed = min_download_speed
         self.enable_logging = enable_logging
+        self.config = config or ConfigParser()
         self.success_count = 0
         self.total_count = 0
         
-        # RTP/UDP协议识别模式
-        self.rtp_udp_pattern = re.compile(r'/(rtp|udp)/')
+        # IP防护机制
+        self.ip_cooldown = {}  # IP冷却时间记录
+        self.min_interval = 0.5  # 同一IP最小请求间隔(秒)
         
-        # RTP/UDP专用超时时间（更短）
-        self.udp_timeout = max(0.5, timeout * 0.3)  # 默认超时的30%，至少0.5秒
+        # 协议识别
+        self.rtp_udp_pattern = re.compile(r'/(rtp|udp)/')
+        self.udp_timeout = max(0.5, timeout * 0.3)
+        
+        # 代理配置
+        self.enable_proxy = self.config.getboolean('PROXY', 'enable_proxy', fallback=False)
+        self.proxy_list = self._load_proxy_list()
+        
+        # 动态调整并发数
+        self.adaptive_concurrency = concurrency
+        self.semaphore = None  # 将在test_channels中初始化
+
+    def _load_proxy_list(self):
+        """加载代理列表"""
+        if self.enable_proxy:
+            proxies = self.config.get('PROXY', 'proxy_list', fallback='')
+            return [p.strip() for p in proxies.split(',') if p.strip()]
+        return []
+
+    def extract_ip_from_url(self, url: str) -> str:
+        """从URL中提取IP地址或主机名"""
+        try:
+            parsed = urllib.parse.urlparse(url)
+            # 处理IPv6地址的特殊情况
+            if '[' in parsed.netloc and ']' in parsed.netloc:
+                return parsed.netloc.split(']')[0] + ']'
+            # 提取主机名（可能是IP或域名）
+            host = parsed.netloc.split(':')[0]
+            return host
+        except:
+            return "unknown"
 
     async def test_channels(self, channels: List[Channel], progress_cb: Callable,
                           failed_urls: Set[str], white_list: set):
@@ -34,32 +70,73 @@ class SpeedTester:
         self.total_count = len(channels)
         self.success_count = 0
         
+        # 随机化测试顺序
+        random.shuffle(channels)
+        
+        # 根据IP多样性动态调整并发数
+        unique_ips = len({self.extract_ip_from_url(c.url) for c in channels})
+        self.adaptive_concurrency = min(
+            self.concurrency, 
+            max(1, unique_ips // 2)  # 每2个IP分配1个并发槽
+        )
+        self.semaphore = asyncio.Semaphore(self.adaptive_concurrency)
+        
+        # 分组频道
+        ip_groups = self.group_channels_by_ip(channels)
+        
+        # 创建测试任务
         async with aiohttp.ClientSession(timeout=self.timeout) as session:
             tasks = []
-            for channel in channels:
-                task = self._test_channel(
-                    session, channel, progress_cb, failed_urls, white_list
-                )
+            for ip, group in ip_groups.items():
+                # 对同一IP的频道批量测试
+                task = self._batch_test_same_ip(session, group, progress_cb, failed_urls, white_list)
                 tasks.append(task)
             
             await asyncio.gather(*tasks)
 
+    def group_channels_by_ip(self, channels: List[Channel]) -> dict:
+        """按IP分组频道"""
+        groups = defaultdict(list)
+        for channel in channels:
+            ip = self.extract_ip_from_url(channel.url)
+            groups[ip].append(channel)
+        return groups
+
+    async def _batch_test_same_ip(self, session: aiohttp.ClientSession, 
+                                channels: List[Channel], progress_cb: Callable,
+                                failed_urls: Set[str], white_list: set):
+        """批量测试同一IP的多个频道"""
+        ip = self.extract_ip_from_url(channels[0].url)
+        
+        # 检查IP冷却状态
+        current_time = time.time()
+        if ip in self.ip_cooldown:
+            last_access = self.ip_cooldown[ip]
+            elapsed = current_time - last_access
+            if elapsed < self.min_interval:
+                wait_time = self.min_interval - elapsed
+                await asyncio.sleep(wait_time)
+        
+        # 执行批量测试
+        try:
+            for channel in channels:
+                await self._test_channel(session, channel, progress_cb, failed_urls, white_list)
+        finally:
+            # 更新IP访问时间
+            self.ip_cooldown[ip] = time.time()
+
     async def _test_channel(self, session: aiohttp.ClientSession, channel: Channel,
                           progress_cb: Callable, failed_urls: Set[str], white_list: set):
-        """测试单个频道（带详细调试日志）"""
+        """测试单个频道"""
         # 获取IP类型
         ip_type = Channel.classify_ip_type(channel.url)
         ipv6_match = Channel.IPV6_PATTERN.search(channel.url)
         
+        # 白名单检查
         if self._is_in_white_list(channel, white_list):
             channel.status = 'online'
-            logger.debug(
-                f"DEBUG - 频道分类: {channel.name} | "
-                f"URL={channel.url} | "
-                f"类型={ip_type} | "
-                f"IPv6匹配={ipv6_match.group(0) if ipv6_match else '无'} | "
-                f"状态=白名单免测"
-            )
+            if self.enable_logging:
+                logger.debug(f"白名单免测: {channel.name} ({channel.url})")
             progress_cb()
             return
 
@@ -73,104 +150,90 @@ class SpeedTester:
                 
                 if success:
                     self.success_count += 1
-                    status = 'online'
+                    channel.status = 'online'  # 设置频道状态
                 else:
                     failed_urls.add(channel.url)
-                    status = 'offline'
+                    channel.status = 'offline'  # 设置频道状态
                 
-                # 调试日志（精确到每个频道的测速结果）
-                logger.debug(
-                    f"DEBUG - 频道分类: {channel.name} | "
-                    f"URL={channel.url} | "
-                    f"类型={ip_type} | "
-                    f"IPv6匹配={ipv6_match.group(0) if ipv6_match else '无'} | "
-                    f"网速={speed:.2f}KB/s | "
-                    f"延迟={latency:.2f}ms | "
-                    f"状态={status}" + 
-                    (" | 协议=RTP/UDP" if is_rtp_udp else "")
-                )
+                # 调试日志
+                if self.enable_logging:
+                    log_msg = (
+                        f"频道: {channel.name} | "
+                        f"IP类型: {ip_type} | "
+                        f"协议: {'RTP/UDP' if is_rtp_udp else 'HTTP'} | "
+                        f"延迟: {latency:.2f}ms | "
+                        f"速度: {speed:.2f}KB/s | "
+                        f"状态: {channel.status}"
+                    )
+                    logger.debug(log_msg)
                 
             except Exception as e:
                 failed_urls.add(channel.url)
-                logger.debug(
-                    f"DEBUG - 频道分类: {channel.name} | "
-                    f"URL={channel.url} | "
-                    f"类型={ip_type} | "
-                    f"IPv6匹配={ipv6_match.group(0) if ipv6_match else '无'} | "
-                    f"网速=0.00KB/s | "
-                    f"延迟=0.00ms | "
-                    f"状态=error({str(e)})"
-                )
+                channel.status = 'offline'  # 设置频道状态
+                if self.enable_logging:
+                    logger.error(f"测试出错: {channel.name} - {str(e)}")
             finally:
                 progress_cb()
 
     async def _perform_test(self, session: aiohttp.ClientSession, 
                           channel: Channel, is_rtp_udp: bool) -> Tuple[bool, float, float]:
-        """执行测速并返回（是否成功，速度KB/s，延迟ms）"""
+        """执行测速并返回结果"""
+        proxy_session = None
         try:
             headers = {'User-Agent': 'Mozilla/5.0'}
             start_time = time.time()
             
-            # ==== RTP/UDP协议特殊处理 ====
-            if is_rtp_udp:
-                # 只测试连接性，不测试速度
-                timeout = aiohttp.ClientTimeout(total=self.udp_timeout)
-                async with session.head(
-                    channel.url, 
-                    headers=headers,
-                    timeout=timeout
-                ) as resp:
-                    latency = (time.time() - start_time) * 1000  # 毫秒
-                    
-                    # 200-399状态码都认为是成功
-                    if 200 <= resp.status < 400:
-                        channel.status = 'online'
-                        channel.response_time = latency
-                        channel.download_speed = 0  # 不测试速度
-                        return True, 0.0, latency
-                    else:
-                        channel.status = 'offline'
-                        return False, 0.0, latency
-                
-            # ==== 标准HTTP协议处理 ====
+            # 应用代理（如果启用）
+            if self.enable_proxy and self.proxy_list:
+                proxy = random.choice(self.proxy_list)
+                connector = aiohttp.ProxyConnector(proxy=proxy)
+                proxy_session = aiohttp.ClientSession(connector=connector, timeout=self.timeout)
+                use_session = proxy_session
             else:
-                async with session.get(channel.url, headers=headers) as resp:
-                    # 测量连接延迟
-                    latency = (time.time() - start_time) * 1000  # 转换为毫秒
-                    
+                use_session = session
+            
+            # RTP/UDP协议特殊处理
+            if is_rtp_udp:
+                async with use_session.head(
+                    channel.url,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=self.udp_timeout)
+                ) as resp:
+                    latency = (time.time() - start_time) * 1000
+                    if 200 <= resp.status < 400:
+                        return True, 0.0, latency
+                    return False, 0.0, latency
+                
+            # 标准HTTP协议处理
+            else:
+                async with use_session.get(channel.url, headers=headers) as resp:
+                    latency = (time.time() - start_time) * 1000
                     if resp.status != 200:
-                        channel.status = 'offline'
                         return False, 0.0, latency
                     
-                    # 测量下载速度
                     content = await resp.read()
                     download_time = time.time() - start_time
-                    speed = len(content) / download_time / 1024  # KB/s
+                    speed = len(content) / download_time / 1024
                     
                     if speed >= self.min_download_speed:
-                        channel.status = 'online'
-                        channel.response_time = latency
-                        channel.download_speed = speed
                         return True, speed, latency
-                    else:
-                        channel.status = 'offline'
-                        return False, speed, latency
+                    return False, speed, latency
                 
         except asyncio.TimeoutError:
-            # 超时特殊处理
-            channel.status = 'offline'
-            return False, 0.0, self.timeout * 1000  # 返回超时时间作为延迟
-            
-        except Exception as e:
-            channel.status = 'offline'
-            return False, 0.0, 0.0  # 其他错误返回0延迟
+            return False, 0.0, self.timeout.total * 1000
+        except Exception:
+            return False, 0.0, 0.0
+        finally:
+            # 关闭代理会话（如果是独立创建的）
+            if proxy_session:
+                await proxy_session.close()
 
     def _is_in_white_list(self, channel: Channel, white_list: set) -> bool:
-        """检查白名单（不区分大小写）"""
-        channel_url_lower = channel.url.lower()
-        channel_name_lower = channel.name.lower()
+        """检查白名单"""
+        channel_url = channel.url.lower()
+        channel_name = channel.name.lower()
         return any(
-            w.lower() in channel_url_lower or 
-            w.lower() == channel_name_lower 
+            (w.lower() in channel_url) or 
+            (w.lower() == channel_name)
             for w in white_list
         )

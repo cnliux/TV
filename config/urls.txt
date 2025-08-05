@@ -9,6 +9,7 @@ https://raw.githubusercontent.com/q1017673817/iptvz/refs/heads/main/zubo_all.txt
 https://raw.githubusercontent.com/vbskycn/iptv/refs/heads/master/tv/iptv6.txt
 https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u
 https://raw.githubusercontent.com/TianmuTNT/iptv/refs/heads/main/iptv.txt
+https://raw.githubusercontent.com/xiongjian83/zubo/e093af719b8c3d7d6eb553300507251e00180027/speedtest/zubo.txt
 https://github.com/vbskycn/iptv/raw/refs/heads/master/tv/iptv4.txt
 https://raw.githubusercontent.com/alantang1977/IPTV_SuperB/refs/heads/main/output/live_ipv6.txt
 https://raw.githubusercontent.com/big-mouth-cn/tv/refs/heads/main/iptv.m3u

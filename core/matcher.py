@@ -11,7 +11,7 @@ import configparser
 logger = logging.getLogger(__name__)
 
 class AutoCategoryMatcher:
-    """分类匹配器（带缓存和调试模式）"""
+    """分类匹配器（带缓存、调试模式和特殊字符处理）"""
     
     def __init__(self, template_path: str, config=None):
         self.template_path = template_path
@@ -54,7 +54,7 @@ class AutoCategoryMatcher:
         return cleaned
 
     def is_in_template(self, channel_name: str) -> bool:
-        """检查频道是否在模板中（新增方法）"""
+        """检查频道是否在模板中"""
         return self.match(channel_name) != "未分类"
 
     def _extract_suffixes(self) -> List[str]:
@@ -149,7 +149,7 @@ class AutoCategoryMatcher:
         self.cache_stats['misses'] += 1
         
         if self.enable_debug:
-            logger.debug(f"🔍🔍🔍🔍 开始匹配频道: '{channel_name}' (清理后: '{clean_name}')")
+            logger.debug(f"🔍🔍🔍🔍🔍🔍🔍🔍 开始匹配频道: '{channel_name}' (清理后: '{clean_name}')")
         
         # 使用清理后的名称进行匹配
         for category, patterns in self.categories.items():
@@ -220,7 +220,7 @@ class AutoCategoryMatcher:
         threads = self.config.getint('PERFORMANCE', 'classification_threads', fallback=4) if self.config else 4
         batch_size = self.config.getint('PERFORMANCE', 'classification_batch_size', fallback=2000) if self.config else 2000
         
-        logger.info(f"🔁🔁🔁🔁 启动并行分类处理: 总数={total}, 线程数={threads}, 批次大小={batch_size}")
+        logger.info(f"🔁🔁🔁🔁🔁🔁🔁🔁 启动并行分类处理: 总数={total}, 线程数={threads}, 批次大小={batch_size}")
         
         results = {}
         batches = [channel_names[i:i+batch_size] for i in range(0, total, batch_size)]
@@ -296,15 +296,28 @@ class AutoCategoryMatcher:
         return template_order
 
     def _get_channel_order(self, channel: Channel, channel_names: List[str]) -> int:
-        """获取频道在模板中的顺序"""
+        """获取频道在模板中的顺序（带特殊字符处理）"""
         try:
             clean_name = self.normalize_channel_name(channel.name)
+            logger.debug(f"排序频道: {channel.name} (清理后: {clean_name})")
+            
             for i, name in enumerate(channel_names):
-                if re.search(f'^{name}$', clean_name):
-                    return i
+                # 转义正则表达式特殊字符
+                escaped_name = re.escape(name)
+                
+                try:
+                    logger.debug(f"  匹配规则 {i}: {name} (转义后: {escaped_name})")
+                    if re.search(f'^{escaped_name}$', clean_name):
+                        logger.debug(f"  匹配成功: 频道 '{clean_name}' 匹配规则 '{name}' (位置: {i})")
+                        return i
+                except re.error as regex_err:
+                    logger.warning(f"正则表达式错误: 模式='^{escaped_name}$', 频道='{clean_name}', 错误: {str(regex_err)}")
+                    continue
+            
+            logger.debug(f"  未找到匹配规则: 频道 '{clean_name}'")
             return len(channel_names)  # 未定义的频道放最后
         except Exception as e:
-            logger.error(f"频道排序错误: {channel.name}, 错误: {e}")
+            logger.error(f"频道排序错误: {channel.name}, 错误: {str(e)}")
             return len(channel_names)
     
     def print_cache_stats(self):
@@ -314,7 +327,7 @@ class AutoCategoryMatcher:
         total = hits + misses
         hit_rate = (hits / total * 100) if total > 0 else 0
         
-        logger.info("📊📊📊📊 缓存统计:")
+        logger.info("📊📊📊📊📊📊📊📊 缓存统计:")
         logger.info(f"  总请求: {total}")
         logger.info(f"  命中: {hits} ({hit_rate:.1f}%)")
         logger.info(f"  未命中: {misses}")
@@ -327,7 +340,7 @@ class AutoCategoryMatcher:
         total_channels = self.performance_stats['total_channels']
         channels_per_sec = total_channels / total_time if total_time > 0 else 0
         
-        logger.info("🚀🚀🚀🚀 性能报告:")
+        logger.info("🚀🚀🚀🚀🚀🚀🚀🚀 性能报告:")
         logger.info(f"  处理频道总数: {total_channels}")
         logger.info(f"  总处理时间: {total_time:.4f}秒")
         logger.info(f"  平均速度: {channels_per_sec:.0f} 频道/秒")

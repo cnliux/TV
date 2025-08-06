@@ -4,6 +4,10 @@ https://www.254950134.xyz/final_streams.txt
 https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u
 https://proxy.lalifeier.eu.org/https://raw.githubusercontent.com/lalifeier/IPTV/main/txt/hotel/%E5%85%A8%E5%9B%BD.txt
 https://proxy.lalifeier.eu.org/https://raw.githubusercontent.com/lalifeier/IPTV/main/txt/IPTV.txt
+https://raw.githubusercontent.com/Wirili/IPTV/refs/heads/main/live.txt
+https://raw.githubusercontent.com/alenin-zhang/IPTV/refs/heads/main/lenin.txt
+https://ghfast.top/raw.githubusercontent.com/TianmuTNT/iptv/main/iptv.txt
+https://raw.githubusercontent.com/cs3306/IPTV-Sources/main/data/output/iptv_collection.m3u
 https://raw.githubusercontent.com/vbskycn/iptv/refs/heads/master/tv/hd.txt
 https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/refs/heads/main/bbxx_lite.txt
 https://fastly.jsdelivr.net/gh/Wirili/IPTV@main/live.txt

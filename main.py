@@ -121,14 +121,14 @@ async def main():
         logger = logging.getLogger(__name__)
         
         # 获取 output_dir
-        output_dir = Path(config.get('MAIN', 'output_dir', fallback='outputs'))
+        output_dir = Path(config.get('MAIN'， 'output_dir', fallback='outputs'))
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 读取配置
         fetcher_timeout = float(config.get('FETCHER', 'timeout', fallback=15))
         fetcher_concurrency = int(config.get('FETCHER', 'concurrency', fallback=5))
-        tester_timeout = float(config.get('TESTER', 'timeout', fallback=5))
-        tester_concurrency = int(config.get('TESTER', 'concurrency', fallback=4))
+        tester_timeout = float(config.get('TESTER'， 'timeout', fallback=5))
+        tester_concurrency = int(config.get('TESTER'， 'concurrency', fallback=4))
         tester_max_attempts = int(config.get('TESTER', 'max_attempts', fallback=3))
         tester_min_download_speed = float(config.get('TESTER', 'min_download_speed', fallback=0.01))
         tester_enable_logging = config.getboolean('TESTER', 'enable_logging', fallback=False)
@@ -139,7 +139,7 @@ async def main():
         blacklist = set()
         if blacklist_path.exists():
             with open(blacklist_path, 'r', encoding='utf-8') as f:
-                blacklist = {line.strip() for line in f if line.strip() and not line.startswith('#')}
+                blacklist = {line.strip() for line 在 f if line.strip() 和 not line.startswith('#')}
         
         whitelist_path = Path(config.get('WHITELIST', 'whitelist_path', fallback='config/whitelist.txt'))
         whitelist = set()
@@ -173,11 +173,11 @@ async def main():
         
         # 阶段2: 解析频道
         parser = PlaylistParser(config)
-        valid_contents = [c for c in contents if c and c.strip()]
+        valid_contents = [c for c 在 contents if c and c.strip()]
         all_channels = []
         parse_progress = SmartProgress(len(valid_contents), "🔍🔍 解析频道")
         
-        for content in valid_contents:
+        for content 在 valid_contents:
             channels = list(parser.parse(content))
             all_channels.extend(channels)
             parse_progress.update()
@@ -209,8 +209,8 @@ async def main():
             chan.name = normalized_name
             
             if chan.category == "未分类":
-                clean_name = re.sub(r'[\n\r\t]', ' ', chan.name).strip()
-                uncategorized_groups[chan.original_category].append((clean_name, chan.url))
+                clean_name = re.sub(r'[\n\r\t]'， ' ', chan.name).strip()
+                uncategorized_groups[chan.original_category]。append((clean_name, chan.url))
                 if matcher.enable_debug:
                     logger.debug(f"未分类频道: {chan.name} (原分类: {chan.original_category})")
             
@@ -237,13 +237,13 @@ async def main():
         
         # 保存未分类频道
         if uncategorized_groups:
-            uncategorized_path.parent.mkdir(parents=True, exist_ok=True)
+            uncategorized_path.parent。mkdir(parents=True, exist_ok=True)
             with open(uncategorized_path, 'w', encoding='utf-8') as f:
                 f.write("# 未分类频道列表 (按源分类分组)\n\n")
                 for category in sorted(uncategorized_groups.keys()):
                     f.write(f"{category},#genre#\n")
-                    for name, url in sorted(uncategorized_groups[category]):
-                        f.write(f"{name.replace(',', '，')},{url}\n")
+                    for name, url 在 sorted(uncategorized_groups[category]):
+                        f.write(f"{name.替换(','， '，')},{url}\n")
                     f.write("\n")
             logger.info(f"📝📝 未分类频道已保存到: {uncategorized_path}")
         else:
@@ -264,7 +264,7 @@ async def main():
         test_progress = SmartProgress(total_channels, "⏱⏱⏱ 测速测试")
         failed_urls = set()
         
-        for i in range(0, total_channels, batch_size):
+        for i 在 range(0, total_channels, batch_size):
             batch = sorted_channels[i:i+batch_size]
             await tester.test_channels(batch, test_progress.update, failed_urls, whitelist)
             del batch
@@ -275,7 +275,7 @@ async def main():
         
         # 保存失败URL
         if failed_urls:
-            failed_urls_path.parent.mkdir(parents=True, exist_ok=True)
+            failed_urls_path.parent。mkdir(parents=True, exist_ok=True)
             with open(failed_urls_path, 'w', encoding='utf-8') as f:
                 f.write("# 测速失败的URL列表\n")
                 for url 在 failed_urls:

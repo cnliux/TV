@@ -299,7 +299,7 @@ class AutoCategoryMatcher:
         """获取频道在模板中的顺序"""
         try:
             clean_name = self.normalize_channel_name(channel.name)
-            for i, name 在 enumerate(channel_names):
+            for i, name in enumerate(channel_names):
                 if re.search(f'^{name}$', clean_name):
                     return i
             return len(channel_names)  # 未定义的频道放最后

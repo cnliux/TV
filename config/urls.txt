@@ -2,6 +2,9 @@ https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u
 https://raw.githubusercontent.com/mlvjfchen/TV/refs/heads/main/output/result.txt
 https://www.254950134.xyz/final_streams.txt
 https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u
+https://raw.githubusercontent.com/adminouyang/dszby/d5be6fa2b1e4d1f69ad2bd0f907a88a4735425e0/merged_output.txt
+https://raw.githubusercontent.com/ssili126/tv/main/itvlist.txt
+https://raw.githubusercontent.com/adminouyang/dszby/refs/heads/main/py/%E6%B5%8B%E7%BB%98%E7%AB%99%E9%87%87%E9%9B%86/%E7%BB%84%E6%92%AD%E4%BC%98%E9%80%89.txt
 https://proxy.lalifeier.eu.org/https://raw.githubusercontent.com/lalifeier/IPTV/main/txt/hotel/%E5%85%A8%E5%9B%BD.txt
 https://proxy.lalifeier.eu.org/https://raw.githubusercontent.com/lalifeier/IPTV/main/txt/IPTV.txt
 https://raw.githubusercontent.com/Wirili/IPTV/refs/heads/main/live.txt

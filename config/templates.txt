@@ -189,7 +189,13 @@ Tennis Channel US
 US MTV LIVE
 viuTV
 🎬电影频道,#genre#
-
+4K乐享超清
+BesTV健康
+BesTV全球大片
+BesTV戏曲精选
+BesTV文化
+BesTV游戏
+BesTV电视剧
 CHC家庭影院
 CHC动作电影
 CHC高清电影
@@ -426,6 +432,7 @@ IPTV经典电影
 .*影院
 .*剧场
 🏀体育频道,#genre#
+BesTV体育
 央视台球
 风云足球
 广东体育
@@ -457,6 +464,9 @@ IPTV经典电影
 JJ斗地主
 
 🪁动画频道,#genre#
+BRTV卡酷少儿
+BesTV动漫
+BesTV少儿
 卡酷动画
 动漫秀场
 新动漫
@@ -719,3 +729,5 @@ Heart FM 乐动1056
 长沙交通广播
 .*广播.*
 .*电台.*
+.*FM.*
+.*fm.*

@@ -293,8 +293,7 @@ async def main():
 
             # 将测速失败URL集合传递给exporter
             exporter.failed_urls = failed_urls  # 添加这行
-
-            export_progress = SmartProgress(1， "💾💾💾💾 导出结果")
+            export_progress = SmartProgress(1, "💾💾💾💾 导出结果")
             exporter.export(sorted_channels, export_progress.update)
         
         # 输出摘要

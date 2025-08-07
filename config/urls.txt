@@ -70,6 +70,7 @@ https://cdn.jsdelivr.net/gh/suxuang/myIPTV@main/ipv6.m3u
 https://cdn.jsdelivr.net/gh/joevess/IPTV@main/home.m3u8
 https://cdn.jsdelivr.net/gh/xzw832/cmys@main/S_CCTV.txt
 https://cdn.jsdelivr.net/gh/xzw832/cmys@main/S_weishi.txt
+https://raw.githubusercontent.com/reysc/M3U8/50df559bd3c9361b5ebb6cfc3ff07be2978f1e61/mk1.conf
 https://live.zbds.top/tv/iptv4.txt
 https://github.com/mlzlzj/IPTV2/blob/main/txt/jiudian/%E5%85%A8%E5%9B%BD.txt
 https://live.zhoujie218.top/tv/iptv4.txt

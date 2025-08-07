@@ -18,6 +18,9 @@ zb.xmzb.xyz
 goodiptv.club
 www.goodiptv.club
 8.138.7.223
+smart.pendy.dpdns.org
+smart.pendy.dpdns.org/Smart.php?id=
+https://smart.pendy.dpdns.org/Smart.php?id=
 https://live1-fuyun.fjtv.net/haixiapd/hd/live.m3u8?_upt=be1ca7581745779708
 http://110.53.52.63:8888/newlive/live/hls/20/live.m3u8
 http://[2409:8087:74d9:21::6]:80/270000001128/9900000528/index.m3u8

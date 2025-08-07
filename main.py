@@ -278,7 +278,7 @@ async def main():
             failed_urls_path.parent.mkdir(parents=True, exist_ok=True)
             with open(failed_urls_path, 'w', encoding='utf-8') as f:
                 f.write("# 测速失败的URL列表\n")
-                for url in failed_urls:
+                for url 在 failed_urls:
                     f.write(f"{url}\n")
             logger.info(f"📝📝 测速失败URL已保存: {failed_urls_path}")
 
@@ -294,7 +294,7 @@ async def main():
             # 将测速失败URL集合传递给exporter
             exporter.failed_urls = failed_urls  # 添加这行
 
-            export_progress = SmartProgress(1, "💾💾💾💾 导出结果")
+            export_progress = SmartProgress(1， "💾💾💾💾 导出结果")
             exporter.export(sorted_channels, export_progress.update)
         
         # 输出摘要

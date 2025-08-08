@@ -17,7 +17,7 @@ class AutoCategoryMatcher:
         self.template_path = template_path
         self.config = config
         self.enable_debug = config.getboolean('MATCHER', 'enable_debug_classification', fallback=False) if config else False
-        self.enable_space_clean = config.getboolean('MATCHER'， 'enable_space_clean', fallback=True) if config else True
+        self.enable_space_clean = config.getboolean('MATCHER', 'enable_space_clean', fallback=True) if config else True
         
         # 初始化缓存和统计
         self.normalize_cache = {}
@@ -50,7 +50,7 @@ class AutoCategoryMatcher:
         # 2. 合并中间多余空格
         cleaned = re.sub(r'\s+', ' ', cleaned)
         # 3. 替换常见特殊字符
-        cleaned = cleaned.替换('_', ' ').替换('-'， ' ')
+        cleaned = cleaned.replace('_', ' ').replace('-', ' ')
         return cleaned
 
     def is_in_template(self, channel_name: str) -> bool:
@@ -63,8 +63,8 @@ class AutoCategoryMatcher:
         suffixes = ["高清", "HD", "综合"]
         
         try:
-            with open(self.template_path， 'r', encoding='utf-8') as f:
-                for line 在 f:
+            with open(self.template_path, 'r', encoding='utf-8') as f:
+                for line in f:
                     if match := suffix_pattern.search(line):
                         return [s.strip() for s in match.group(1).split(',') if s.strip()]
         except Exception as e:
@@ -92,7 +92,7 @@ class AutoCategoryMatcher:
                     if current_category:
                         pattern = self._compile_cached(line.split('|')[0].strip())
                         if pattern:
-                            categories[current_category]。append(pattern)
+                            categories[current_category].append(pattern)
         except Exception as e:
             logger.error(f"模板解析失败: {str(e)}")
             raise
@@ -117,15 +117,15 @@ class AutoCategoryMatcher:
         name_mapping = {}
         try:
             with open(self.template_path, 'r', encoding='utf-8') as f:
-                for line 在 f:
+                for line in f:
                     line = line.strip()
-                    if not line 或 line.startswith('#') or line.endswith(',#genre#'):
+                    if not line or line.startswith('#') or line.endswith(',#genre#'):
                         continue
                         
                     parts = line.split('|')
                     if len(parts) > 1:
-                        standard_name = parts[0]。strip()
-                        for name 在 parts:
+                        standard_name = parts[0].strip()
+                        for name in parts:
                             clean_name = name.strip()
                             name_mapping[clean_name.lower()] = standard_name
         except Exception as e:
@@ -152,8 +152,8 @@ class AutoCategoryMatcher:
             logger.debug(f"🔍🔍🔍🔍🔍🔍🔍🔍 开始匹配频道: '{channel_name}' (清理后: '{clean_name}')")
         
         # 使用清理后的名称进行匹配
-        for category, patterns 在 self.categories.items():
-            for pattern 在 patterns:
+        for category, patterns in self.categories.items():
+            for pattern in patterns:
                 try:
                     if pattern.search(clean_name):  # 使用清理后的名称
                         if self.enable_debug:
@@ -287,8 +287,8 @@ class AutoCategoryMatcher:
                     if current_category:
                         parts = line.split('|')
                         if parts:
-                            standard_name = parts[0]。strip()
-                            template_order[current_category]。append(standard_name)
+                            standard_name = parts[0].strip()
+                            template_order[current_category].append(standard_name)
         except Exception as e:
             logger.error(f"模板顺序加载失败: {str(e)}")
             
@@ -301,7 +301,7 @@ class AutoCategoryMatcher:
             clean_name = self.normalize_channel_name(channel.name)
             logger.debug(f"排序频道: {channel.name} (清理后: {clean_name})")
             
-            for i, name 在 enumerate(channel_names):
+            for i, name in enumerate(channel_names):
                 # 转义正则表达式特殊字符
                 escaped_name = re.escape(name)
                 

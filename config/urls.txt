@@ -1,16 +1,1 @@
 https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u
-https://raw.githubusercontent.com/mlvjfchen/TV/refs/heads/main/output/result.txt
-https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u
-https://raw.githubusercontent.com/adminouyang/dszby/d5be6fa2b1e4d1f69ad2bd0f907a88a4735425e0/merged_output.txt
-https://raw.githubusercontent.com/ssili126/tv/main/itvlist.txt
-https://raw.githubusercontent.com/adminouyang/dszby/refs/heads/main/py/%E6%B5%8B%E7%BB%98%E7%AB%99%E9%87%87%E9%9B%86/%E7%BB%84%E6%92%AD%E4%BC%98%E9%80%89.txt
-https://raw.githubusercontent.com/lalifeier/IPTV/main/txt/hotel/%E5%85%A8%E5%9B%BD.txt
-https://raw.githubusercontent.com/lalifeier/IPTV/main/txt/IPTV.txt
-https://raw.githubusercontent.com/Wirili/IPTV/refs/heads/main/live.txt
-https://raw.githubusercontent.com/alenin-zhang/IPTV/refs/heads/main/lenin.txt
-https://raw.githubusercontent.com/TianmuTNT/iptv/main/iptv.txt
-https://raw.githubusercontent.com/cs3306/IPTV-Sources/main/data/output/iptv_collection.m3u
-https://raw.githubusercontent.com/vbskycn/iptv/refs/heads/master/tv/hd.txt
-https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/refs/heads/main/bbxx_lite.txt
-https://fastly.jsdelivr.net/gh/Wirili/IPTV@main/live.txt
-https://raw.githubusercontent.com/q1017673817/iptvz/refs/heads/main/zubo_all.txt

@@ -19,29 +19,13 @@ from core import (
     Channel
 )
 
-def setup_basic_logging():
-    """设置基础日志（在读取配置前使用）"""
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    
-    # 控制台处理器
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
-    logger.addHandler(console_handler)
-    
-    return logger
-
+# 配置日志
 def setup_logging(config):
-    """根据配置设置完整日志系统"""
     log_level = getattr(logging, config.get('LOGGING', 'log_level', fallback='INFO').upper())
     log_to_file = config.getboolean('LOGGING', 'log_to_file', fallback=False)
     
     logger = logging.getLogger()
     logger.setLevel(log_level)
-    
-    # 移除之前的基础处理器
-    for handler in logger.handlers[:]:
-        logger.removeHandler(handler)
     
     # 控制台处理器
     console_handler = logging.StreamHandler()
@@ -56,6 +40,7 @@ def setup_logging(config):
         file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         logger.addHandler(file_handler)
 
+# 动态进度条实现
 class SmartProgress:
     def __init__(self, total: int, description: str, 
                  min_interval: float = 0.5, max_interval: float = 2.0):
@@ -64,10 +49,11 @@ class SmartProgress:
         self.completed = 0
         self.start_time = time.time()
         self.last_update_time = 0
-        self.min_interval = min_interval
-        self.max_interval = max_interval
-        self.next_update_in = min_interval
-
+        # 动态刷新控制参数
+        self.min_interval = min_interval  # 最小刷新间隔(秒)
+        self.max_interval = max_interval  # 最大刷新间隔
+        self.next_update_in = min_interval  # 下次刷新时间间隔
+    
     def _should_update(self) -> bool:
         current_time = time.time()
         elapsed = current_time - self.last_update_time
@@ -112,6 +98,7 @@ class SmartProgress:
         self._refresh_display()
         print()
 
+# 判断频道是否在黑名单中
 def is_blacklisted(channel: Channel, blacklist: Set[str]) -> bool:
     """检查频道是否在黑名单中（预处理为小写）"""
     lower_blacklist = {entry.lower() for entry in blacklist}
@@ -121,18 +108,15 @@ def is_blacklisted(channel: Channel, blacklist: Set[str]) -> bool:
 
 async def main():
     """主工作流程"""
-    # 初始化基础日志（在配置读取前）
-    basic_logger = setup_basic_logging()
-    
     try:
         # 初始化配置
         config = configparser.ConfigParser()
         config_path = Path('config/config.ini')
         if not config_path.exists():
-            raise FileNotFoundError(f"❌❌ 配置文件不存在: {config_path}")
+            raise FileNotFoundError(f"❌❌❌❌ 配置文件不存在: {config_path}")
         config.read(config_path, encoding='utf-8')
         
-        # 设置完整日志系统
+        # 设置日志
         setup_logging(config)
         logger = logging.getLogger(__name__)
         
@@ -171,9 +155,9 @@ async def main():
         
         # 检查文件是否存在
         if not urls_path.exists():
-            raise FileNotFoundError(f"❌❌ 缺少订阅源文件: {urls_path}")
+            raise FileNotFoundError(f"❌❌❌❌ 缺少订阅源文件: {urls_path}")
         if not templates_path.exists():
-            raise FileNotFoundError(f"❌❌ 缺少分类模板文件: {templates_path}")
+            raise FileNotFoundError(f"❌❌❌❌ 缺少分类模板文件: {templates_path}")
         
         # 阶段1: 获取订阅源
         with open(urls_path, 'r', encoding='utf-8') as f:
@@ -183,7 +167,7 @@ async def main():
             timeout=fetcher_timeout,
             concurrency=fetcher_concurrency
         )
-        fetch_progress = SmartProgress(len(urls), "🌐 获取源数据")
+        fetch_progress = SmartProgress(len(urls), "🌐🌐🌐🌐 获取源数据")
         contents = await fetcher.fetch_all(urls, fetch_progress.update)
         fetch_progress.complete()
         
@@ -191,7 +175,7 @@ async def main():
         parser = PlaylistParser(config)
         valid_contents = [c for c in contents if c and c.strip()]
         all_channels = []
-        parse_progress = SmartProgress(len(valid_contents), "🔍 解析频道")
+        parse_progress = SmartProgress(len(valid_contents), "🔍🔍🔍🔍 解析频道")
         
         for content in valid_contents:
             channels = list(parser.parse(content))
@@ -205,7 +189,7 @@ async def main():
         
         # 阶段3: 智能分类与过滤
         matcher = AutoCategoryMatcher(str(templates_path), config)
-        classify_progress = SmartProgress(len(all_channels), "🏷 分类频道")
+        classify_progress = SmartProgress(len(all_channels), "🏷🏷🏷🏷 分类频道")
         
         # 批量分类
         channel_names = [c.name for c in all_channels]
@@ -224,11 +208,13 @@ async def main():
             normalized_name = matcher.normalize_channel_name(chan.name)
             chan.name = normalized_name
             
+            # 收集未分类频道
             if chan.category == "未分类":
                 clean_name = re.sub(r'[\n\r\t]', ' ', chan.name).strip()
                 uncategorized_groups[chan.original_category].append((clean_name, chan.url))
                 if matcher.enable_debug:
                     logger.debug(f"未分类频道: {chan.name} (原分类: {chan.original_category})")
+                continue  # 跳过后续处理
             
             # 过滤条件
             if (not matcher.is_in_template(chan.name) or 
@@ -245,13 +231,16 @@ async def main():
                 gc.collect()
         
         classify_progress.complete()
-        logger.info(f"过滤后频道数量: {len(processed_channels)}/{len(all_channels)}")
+        
+        # 计算未分类频道总数
+        uncategorized_count = sum(len(group) for group in uncategorized_groups.values())
+        logger.info(f"分类完成: 已分类频道 {len(processed_channels)} 个, 未分类频道 {uncategorized_count} 个")
         
         # 打印分类统计
         matcher.print_cache_stats()
         matcher.print_performance_report()
         
-        # 保存未分类频道
+        # 保存未分类频道（仅在此处写入一次）
         if uncategorized_groups:
             uncategorized_path.parent.mkdir(parents=True, exist_ok=True)
             with open(uncategorized_path, 'w', encoding='utf-8') as f:
@@ -261,11 +250,11 @@ async def main():
                     for name, url in sorted(uncategorized_groups[category]):
                         f.write(f"{name.replace(',', '，')},{url}\n")
                     f.write("\n")
-            logger.info(f"📝 未分类频道已保存到: {uncategorized_path}")
+            logger.info(f"📝📝📝📝 未分类频道已保存到: {uncategorized_path}，共 {uncategorized_count} 个频道")
         else:
             logger.info("✅ 所有频道均已分类")
         
-        # 阶段4: 测速测试
+        # 阶段4: 测速测试（仅处理已分类频道）
         sorted_channels = matcher.sort_channels_by_template(processed_channels, whitelist)
         tester = SpeedTester(
             timeout=tester_timeout,
@@ -277,7 +266,7 @@ async def main():
         
         batch_size = 500
         total_channels = len(sorted_channels)
-        test_progress = SmartProgress(total_channels, "⏱ 测速测试")
+        test_progress = SmartProgress(total_channels, "⏱⏱⏱⏱⏱⏱⏱⏱⏱ 测速测试")
         failed_urls = set()
         
         for i in range(0, total_channels, batch_size):
@@ -296,7 +285,7 @@ async def main():
                 f.write("# 测速失败的URL列表\n")
                 for url in failed_urls:
                     f.write(f"{url}\n")
-            logger.info(f"📝 测速失败URL已保存: {failed_urls_path}")
+            logger.info(f"📝📝📝📝 测速失败URL已保存: {failed_urls_path}")
 
         # 阶段5: 结果导出
         exporter = ResultExporter(
@@ -306,23 +295,21 @@ async def main():
             config=config,
             matcher=matcher
         )
-        exporter.failed_urls = failed_urls
 
-        export_progress = SmartProgress(1, "💾 导出结果")
+        export_progress = SmartProgress(1, "💾💾💾💾💾💾💾💾 导出结果")
         exporter.export(sorted_channels, export_progress.update)
         
         # 输出摘要
         online = sum(1 for c in sorted_channels if c.status == 'online')
         logger.info(f"✅ 任务完成！在线频道: {online}/{len(sorted_channels)}")
-        logger.info(f"📂 输出目录: {output_dir.resolve()}")
+        logger.info(f"📂📂📂📂 输出目录: {output_dir.resolve()}")
     
     except Exception as e:
-        basic_logger.error(f"❌❌ 发生错误: {str(e)}", exc_info=True)
-        basic_logger.info("💡 排查建议:")
-        basic_logger.info("1. 检查config目录下的文件是否存在")
-        basic_logger.info("2. 确认订阅源URL可访问")
-        basic_logger.info("3. 验证分类模板格式是否正确")
-        raise  # 重新抛出异常以便外部捕获
+        logger.error(f"❌❌❌❌ 发生错误: {str(e)}", exc_info=True)
+        logger.info("💡💡💡💡 排查建议:")
+        logger.info("1. 检查config目录下的文件是否存在")
+        logger.info("2. 确认订阅源URL可访问")
+        logger.info("3. 验证分类模板格式是否正确")
 
 if __name__ == "__main__":
     if os.name == 'nt':
@@ -332,4 +319,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:
-        logging.error(f"❌❌ 全局异常: {str(e)}", exc_info=True)
+        logging.error(f"❌❌❌❌ 全局异常: {str(e)}", exc_info=True)

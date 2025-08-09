@@ -36,6 +36,9 @@ class SpeedTester:
         self.rtp_udp_pattern = re.compile(r'/(rtp|udp)/')
         self.udp_timeout = max(0.5, timeout * 0.3)
         
+        # RTP/UDP测试模式配置
+        self.udp_test_method = config.get('TESTER', 'udp_test_method', fallback='latency')
+        
         # 代理配置
         self.enable_proxy = self.config.getboolean('PROXY', 'enable_proxy', fallback=False)
         self.proxy_list = self._load_proxy_list()
@@ -43,6 +46,8 @@ class SpeedTester:
         # 动态调整并发数
         self.adaptive_concurrency = concurrency
         self.semaphore = None  # 将在test_channels中初始化
+        
+        logger.info(f"RTP/UDP测试模式: {self.udp_test_method.upper()}")
 
     def _load_proxy_list(self):
         """加载代理列表"""
@@ -192,17 +197,13 @@ class SpeedTester:
             else:
                 use_session = session
             
-            # RTP/UDP协议特殊处理
+            # RTP/UDP协议处理
             if is_rtp_udp:
-                async with use_session.head(
-                    channel.url,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=self.udp_timeout)
-                ) as resp:
-                    latency = (time.time() - start_time) * 1000
-                    if 200 <= resp.status < 400:
-                        return True, 0.0, latency
-                    return False, 0.0, latency
+                # 根据配置选择测试方法
+                if self.udp_test_method == 'latency':
+                    return await self._test_udp_latency(use_session, channel, headers)
+                else:  # speed
+                    return await self._test_udp_speed(use_session, channel, headers)
                 
             # 标准HTTP协议处理
             else:
@@ -227,6 +228,45 @@ class SpeedTester:
             # 关闭代理会话（如果是独立创建的）
             if proxy_session:
                 await proxy_session.close()
+
+    async def _test_udp_latency(self, session, channel, headers) -> Tuple[bool, float, float]:
+        """测试RTP/UDP延迟（HEAD请求）"""
+        start_time = time.time()
+        try:
+            async with session.head(
+                channel.url,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=self.udp_timeout)
+            ) as resp:
+                latency = (time.time() - start_time) * 1000
+                if 200 <= resp.status < 400:
+                    return True, 0.0, latency
+                return False, 0.0, latency
+        except Exception:
+            return False, 0.0, (time.time() - start_time) * 1000
+
+    async def _test_udp_speed(self, session, channel, headers) -> Tuple[bool, float, float]:
+        """测试RTP/UDP速度（GET请求）"""
+        start_time = time.time()
+        try:
+            async with session.get(
+                channel.url,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=self.udp_timeout)
+            ) as resp:
+                latency = (time.time() - start_time) * 1000
+                if resp.status != 200:
+                    return False, 0.0, latency
+                
+                content = await resp.read()
+                download_time = time.time() - start_time
+                speed = len(content) / download_time / 1024
+                
+                if speed >= self.min_download_speed:
+                    return True, speed, latency
+                return False, speed, latency
+        except Exception:
+            return False, 0.0, (time.time() - start_time) * 1000
 
     def _is_in_white_list(self, channel: Channel, white_list: set) -> bool:
         """检查白名单"""

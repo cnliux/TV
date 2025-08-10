@@ -1,4 +1,3 @@
-# core/tester.py
 import asyncio
 import aiohttp
 import random
@@ -24,7 +23,7 @@ class SpeedTester:
         self.max_attempts = max_attempts
         self.min_download_speed = min_download_speed
         self.enable_logging = enable_logging
-        self.config = config or ConfigParser()
+        self.config = config
         self.success_count = 0
         self.total_count = 0
         
@@ -37,11 +36,16 @@ class SpeedTester:
         self.udp_timeout = max(0.5, timeout * 0.3)
         
         # RTP/UDP测试模式配置
-        self.udp_test_method = config.get('TESTER', 'udp_test_method', fallback='latency')
+        self.udp_test_method = 'latency'  # 默认值
+        if self.config is not None:
+            self.udp_test_method = self.config.get('TESTER', 'udp_test_method', fallback='latency')
         
         # 代理配置
-        self.enable_proxy = self.config.getboolean('PROXY', 'enable_proxy', fallback=False)
-        self.proxy_list = self._load_proxy_list()
+        self.enable_proxy = False
+        self.proxy_list = []
+        if self.config is not None:
+            self.enable_proxy = self.config.getboolean('PROXY', 'enable_proxy', fallback=False)
+            self.proxy_list = self._load_proxy_list()
         
         # 动态调整并发数
         self.adaptive_concurrency = concurrency
